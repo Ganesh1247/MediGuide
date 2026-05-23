@@ -1,0 +1,10 @@
+{
+  "name": "MediGuide Clinical Portal",
+  "description": "Virtual Holographic Clinical Patient and Triage Assistant Platform with real-time multilingual diagnostics and AI copilot.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

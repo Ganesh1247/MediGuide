@@ -35,7 +35,7 @@ const translations: Record<LanguageCode, Record<string, string>> = {
     home: "Home",
     footer_text_1: "© 2026 MediGuide Health Assistant. All information is for helpful educational and guidance purposes only.",
     footer_text_2: "This is a virtual check-up tool. Always speak with real, certified doctors for official medical treatments and prescriptions.",
-    
+
     // Home Page translations
     home_title: "Click on the Body to Check Symptoms",
     home_desc: "Tap any part of the human body on the screen to check symptoms, find nearby hospitals, scan your medicines, or use your voice.",
@@ -120,7 +120,7 @@ const translations: Record<LanguageCode, Record<string, string>> = {
     nav_fact_audit: "स्वास्थ्य तथ्य जांच",
     footer_text_1: "© 2026 MediGuide स्वास्थ्य सहायक। सभी जानकारी केवल शैक्षिक और मार्गदर्शन उद्देश्यों के लिए है।",
     footer_text_2: "यह एक वर्चुअल जांच उपकरण है। अधिकारिक चिकित्सा उपचार और नुस्खे के लिए हमेशा प्रमाणित डॉक्टरों से बात करें।",
-    
+
     // Home Page translations
     home_title: "सक्रिय शरीर लक्षण जांचकर्ता",
     home_desc: "लक्षणों की जांच करने, पास के अस्पताल खोजने, अपनी दवाओं को स्कैन करने या आवाज से जांच करने के लिए स्क्रीन पर दिखाई दे रहे मानव शरीर मॉडल के किसी भी हिस्से पर टैप करें।",
@@ -188,7 +188,7 @@ const translations: Record<LanguageCode, Record<string, string>> = {
     nav_fact_audit: "Detector de Mitos",
     footer_text_1: "© 2026 MediGuide Asistente de Salud. Toda la información es para fines educativos y de guía.",
     footer_text_2: "Esta es una herramienta de chequeo virtual. Hable siempre con doctores de verdad para tratamientos y recetas.",
-    
+
     // Home Page translations
     home_title: "Toque el Cuerpo para Ver Síntomas",
     home_desc: "Toque cualquier parte del cuerpo en la pantalla para ver síntomas, encontrar hospitales, escanear medicinas o usar su voz.",
@@ -226,7 +226,7 @@ const translations: Record<LanguageCode, Record<string, string>> = {
     nav_fact_audit: "فاحص شائعات الصحة",
     footer_text_1: "© 2026 MediGuide مساعد الصحة الموثوق. كل المعلومات هنا لغرض التعليم والإرشاد المساعد فقط.",
     footer_text_2: "هذا فحص افتراضي بسيط ومبسط. استشر دائماً طبيباً حقيقياً معتمداً للحصول على العلاج الفعلي والوصفات الطبية.",
-    
+
     // Home Page translations
     home_title: "اضغط على الجسم للتحقق من الأعراض",
     home_desc: "المس أي جزء من مجسم الجسم البشري على الشاشة للتحقق من الأعراض، أو البحث عن أقرب مستشفى، أو فحص معلومات الأدوية، أو التحدث بالصوت.",
@@ -264,7 +264,7 @@ const translations: Record<LanguageCode, Record<string, string>> = {
     nav_fact_audit: "Kiểm Tra Tin Đồn Sức Khỏe",
     footer_text_1: "© 2026 Trợ lý sức khỏe MediGuide. Các thông tin chỉ dành cho mục đích hướng dẫn sức khỏe và học tập.",
     footer_text_2: "Đây là công cụ hỗ trợ kiểm tra trực tuyến. Vui lòng hỏi ý kiến bác sĩ chuyên khoa thật để có chỉ định và đơn thuốc chính xác.",
-    
+
     // Home Page translations
     home_title: "Thiết Bị Kiểm Tra Triệu Chứng Cơ Thể",
     home_desc: "Chạm vào bất kỳ bộ phận nào của mô hình cơ thể người trên màn hình để kiểm tra các triệu chứng, tìm bệnh viện gần nhất, quét thông tin thuốc hoặc kiểm tra bằng giọng nói.",
@@ -302,7 +302,7 @@ const translations: Record<LanguageCode, Record<string, string>> = {
     nav_fact_audit: "சுகாதார உண்மை சரிபார்ப்பு",
     footer_text_1: "© 2026 MediGuide சுகாதார உதவியாளர். அனைத்து தகவல்களும் பயனுள்ள கல்வி மற்றும் வழிகாட்டுதலுக்காக மட்டுமே.",
     footer_text_2: "இது ஒரு ஆன்லைன் முன்னுரிமை சோதனை கருவி மட்டுமே. மருத்துவ சிகிச்சைகள் அல்லது மருந்து சீட்டுகளுக்கு எப்போதும் டாக்டரை அணுகவும்.",
-    
+
     // Home Page translations
     home_title: "நேரடி உடல் அறிகுறி பரிசோதனையாளர்",
     home_desc: "அறிகுறிகளை சரிபார்க்க, அருகில் உள்ள மருத்துவமனைகளைக் கண்டறிய, உங்கள் மருந்து சீட்டை ஸ்கேன் செய்ய அல்லது உங்கள் குரல் மூலம் பேச, திரையில் உள்ள மனித உடல் மாதிரியில் ஏదేனும் ஒரு பகுதியை தொட்டு தேர்ந்தெடுக்கவும்.",
@@ -340,7 +340,7 @@ const translations: Record<LanguageCode, Record<string, string>> = {
     nav_fact_audit: "ఆరోగ్య సత్యాల తనిఖీ",
     footer_text_1: "© 2026 MediGuide ఆరోగ్య సహాయకుడు. అన్ని సమాచారాలు కేవలం పరిపాలనా మరియు విద్యా మార్గదర్శక సమీక్ష కొరకు మాత్రమే.",
     footer_text_2: "ఇది రోగనిర్ధారణ కొలతలను చూపించడంలో సహాయపడే ఒక వర్చువల్ పరికరం. చికిత్స మరియు ఔషధాల కొరకు ఎల్లప్పుడూ ధృవీకరించబడిన వైద్యుల సలహాలు పొందండి.",
-    
+
     // Home Page translations
     home_title: "క్రియాశీల శరీర లక్షణాల తనిఖీదారు",
     home_desc: "లక్షణాలను తనిఖీ చేయడానికి, సమీపంలోని ఆసుపత్రులను కనుగొనడానికి, మీ మందులను స్కాన్ చేయడానికి లేదా మీ వాయిస్‌తో తనిఖీ చేయడానికి స్క్రీన్ పై ఉన్న మానవ శరీర నమూనాపై ఏదైనా భాగాన్ని తాకండి.",

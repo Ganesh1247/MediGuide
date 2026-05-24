@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Search, ShieldCheck, ShieldAlert, HelpCircle, Loader2, Sparkles, CheckCircle, XCircle, ArrowRight } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface FactResult {
   claim: string;
@@ -44,6 +44,13 @@ export default function FactChecker() {
         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-accent/10 border border-accent/20 text-accent rounded-full mb-2">
           <ShieldCheck className="w-4 h-4" />
           <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t("nav_fact_audit")}</span>
+        </div>
+        <div className="mx-auto w-full max-w-4xl overflow-hidden rounded-[32px] border border-white/10 shadow-2xl">
+          <img
+            src="/myth_auditor.png"
+            alt="Health fact checking illustration"
+            className="w-full h-56 object-cover brightness-95"
+          />
         </div>
         <h1 className="text-5xl font-black text-white uppercase tracking-tight">{t("nav_fact_audit").split(' ')[0]} <span className="text-accent">Auditor</span></h1>
         <p className="text-lg text-text-secondary font-medium max-w-2xl mx-auto">

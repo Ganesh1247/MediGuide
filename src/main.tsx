@@ -5,13 +5,15 @@ import './index.css';
 import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <LanguageProvider>
-      <ThemeProvider>
-        <App />
-      </ThemeProvider>
-    </LanguageProvider>
-  </StrictMode>,
-);
-
+const container = document.getElementById('root');
+if (container) {
+  createRoot(container).render(
+    <StrictMode>
+      <LanguageProvider>
+        <ThemeProvider>
+          <App />
+        </ThemeProvider>
+      </LanguageProvider>
+    </StrictMode>
+  );
+}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Phone, Siren, AlertTriangle, Clock, Search, ChevronDown, X, Activity, ShieldCheck, Zap } from "lucide-react";
 import NearbyHospitalsMap from "./NearbyHospitalsMap";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const HOTLINES = [
   { provider: "National Emergency (Ambulance)", number: "108", type: "Government CATS", eta: "8–12 min", urgent: true },

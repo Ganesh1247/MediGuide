@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { MedicineDetails } from "../../types";
 import { Pill, ShieldCheck, ShieldAlert, Camera, Search, HelpCircle, Loader2, RefreshCw, X, ArrowRight } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const MEDICINE_PRESETS = [
   { name: "Paracetamol", dosage: "500 mg", desc: "Common pain reliever." },

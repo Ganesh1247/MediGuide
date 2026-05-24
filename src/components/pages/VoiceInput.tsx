@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Mic, Globe, ArrowRight, Loader2, Sparkles, Volume2, ShieldCheck, Activity, MessageSquare, MicOff } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { VoiceMappingResult, BodyRegion } from "../../types";
 import { BODY_REGIONS } from "../3d/HumanBodyCanvas";
 import { useLanguage } from "../../context/LanguageContext";

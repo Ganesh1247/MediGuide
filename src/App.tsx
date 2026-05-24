@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import Home from "./components/pages/Home";
 import SymptomChecker from "./components/pages/SymptomChecker";
 import MedicineScanner from "./components/pages/MedicineScanner";
@@ -146,7 +146,7 @@ export default function App() {
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value as any)}
-                  className="bg-transparent text-xs font-black text-accent uppercase tracking-widest outline-none border-none cursor-pointer appearance-none pr-6 font-display"
+                  className="language-select bg-transparent text-sm font-black text-accent uppercase tracking-widest outline-none border-none cursor-pointer appearance-none pr-8 font-display"
                 >
                   {LANGUAGES.map(l => (
                     <option key={l.code} value={l.code} className="bg-bg-surface text-white py-2">

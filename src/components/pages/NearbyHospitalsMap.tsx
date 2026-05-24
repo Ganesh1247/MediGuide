@@ -14,7 +14,7 @@ import {
   Hospital,
   ChevronRight,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 
 export interface NearbyHospital {

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import { MessageSquare, X, Send, Sparkles, Volume2, Mic, MicOff, AlertCircle, RefreshCw } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatMessage {
   id: string;
@@ -179,9 +179,9 @@ export default function AIAssistant() {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-20 h-20 rounded-[32px] flex items-center justify-center text-black shadow-[0_15px_50px_rgba(34,211,238,0.3)] transition-all transform hover:scale-110 active:scale-95 border-none cursor-pointer ${isOpen ? 'bg-bg-surface text-white' : 'bg-gradient-to-br from-accent to-blue'}`}
+        className={`w-16 h-16 rounded-[28px] flex items-center justify-center text-black shadow-[0_12px_30px_rgba(34,211,238,0.25)] transition-all transform hover:scale-105 active:scale-95 border-none cursor-pointer ${isOpen ? 'bg-bg-surface text-white' : 'bg-gradient-to-br from-accent to-blue'}`}
       >
-        {isOpen ? <X className="w-10 h-10" /> : <MessageSquare className="w-10 h-10" />}
+        {isOpen ? <X className="w-8 h-8" /> : <MessageSquare className="w-8 h-8" />}
       </button>
 
     </div>

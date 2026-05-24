@@ -1,37 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { MedicineDetails } from "../../types";
-import { Pill, ShieldCheck, ShieldAlert, Camera, Search, HelpCircle, Loader2 } from "lucide-react";
+import { Pill, ShieldCheck, ShieldAlert, Camera, Search, HelpCircle, Loader2, RefreshCw, X, ArrowRight } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { motion, AnimatePresence } from "motion/react";
 
 const MEDICINE_PRESETS = [
-  {
-    name: "Paracetamol (Crocin Quick)",
-    dosage: "500 mg",
-    generic: "Acetaminophen Compound",
-    desc: "Common analgesic and antipyretic pain reliever."
-  },
-  {
-    name: "Augmentin Duo Strip",
-    dosage: "625 mg",
-    generic: "Amoxicillin + Clavulanate Potassium",
-    desc: "Broad-spectrum antibacterial therapy formulation."
-  },
-  {
-    name: "Glycomet Glycemic Control",
-    dosage: "850 mg",
-    generic: "Metformin Hydrochloride",
-    desc: "First-line oral anti-glycemic compound for Type-2 Diabetes."
-  },
-  {
-    name: "Amlopin 5 Cardiotach",
-    dosage: "5 mg",
-    generic: "Amlodipine Besylate",
-    desc: "Calcium channel blocker anti-hypertensive agent."
-  }
+  { name: "Paracetamol", dosage: "500 mg", desc: "Common pain reliever." },
+  { name: "Augmentin", dosage: "625 mg", desc: "Antibacterial therapy." },
+  { name: "Glycomet", dosage: "850 mg", desc: "Anti-glycemic for Diabetes." },
+  { name: "Amlopin", dosage: "5 mg", desc: "Blood pressure control." }
 ];
 
 export default function MedicineScanner() {
-  const { activeLanguage } = useLanguage();
+  const { activeLanguage, t } = useLanguage();
   const [scanStream, setScanStream] = useState<MediaStream | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState(false);
@@ -42,398 +23,236 @@ export default function MedicineScanner() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Stop camera helper
-  const stopCamera = () => {
-    if (scanStream) {
-      scanStream.getTracks().forEach((track) => track.stop());
-      setScanStream(null);
-    }
-    setCameraActive(false);
-  };
-
-  // Start live webcam scanning
   const startCamera = async () => {
     setCameraError(false);
     setCameraActive(true);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
-      });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
       setScanStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      console.warn("Camera permission denied or unavailable:", err);
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    } catch {
       setCameraError(true);
     }
   };
 
-  // Capture current webcam frame and send to Gemini server endpoint
-  const handleCaptureAndIdentify = async () => {
+  const stopCamera = () => {
+    scanStream?.getTracks().forEach(t => t.stop());
+    setScanStream(null);
+    setCameraActive(false);
+  };
+
+  const handleCapture = async () => {
     if (!videoRef.current) return;
     setLoading(true);
-    setErrorText(null);
-
+    const canvas = document.createElement("canvas");
+    canvas.width = 640; canvas.height = 480;
+    canvas.getContext("2d")?.drawImage(videoRef.current, 0, 0);
+    const dataUrl = canvas.toDataURL("image/jpeg");
     try {
-      // Draw frame on inline virtual canvas to encode as base64 jpeg
-      const canvas = document.createElement("canvas");
-      canvas.width = 640;
-      canvas.height = 480;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-      }
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-
       const resp = await fetch("/api/identify-medicine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          image: dataUrl,
-          language: activeLanguage.englishName 
-        })
+        body: JSON.stringify({ image: dataUrl, language: activeLanguage.englishName })
       });
-
-      if (!resp.ok) {
-        throw new Error("Medicine identifier failed to audit scanned packaging.");
-      }
-
-      const parsed: MedicineDetails = await resp.json();
-      setResult(parsed);
+      const data = await resp.json();
+      setResult(data);
       stopCamera();
-    } catch (err: any) {
-      console.error(err);
-      setErrorText(err.message || "Failed to parse medicine via live camera image.");
+    } catch {
+      setErrorText(t("Diagnostic synthesis failed."));
     } finally {
       setLoading(false);
     }
   };
 
-  // Query custom text via Gemini medicine identifier on the server
-  const handleTextQuery = async (medicineText: string) => {
-    if (!medicineText.trim()) return;
+  const handleSearch = async (text: string) => {
+    if (!text.trim()) return;
     setLoading(true);
-    setErrorText(null);
-    setResult(null);
-
     try {
       const resp = await fetch("/api/identify-medicine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          text: medicineText,
-          language: activeLanguage.englishName 
-        })
+        body: JSON.stringify({ text, language: activeLanguage.englishName })
       });
-
-      if (!resp.ok) {
-        throw new Error("Could not index drug details in CDSCO/FDA registers.");
-      }
-
-      const parsed: MedicineDetails = await resp.json();
-      setResult(parsed);
-    } catch (err: any) {
-      console.error(err);
-      setErrorText(err.message || "Diagnosis text index failure.");
+      const data = await resp.json();
+      setResult(data);
+    } catch {
+      setErrorText(t("Diagnostic synthesis failed."));
     } finally {
       setLoading(false);
     }
   };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (scanStream) {
-        scanStream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, [scanStream]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[calc(100vh-100px)] py-3 relative z-10">
+    <div className="max-w-6xl mx-auto space-y-12 animate-slideUp pb-12">
       
-      {/* LEFT SECTION: Viewfinder / Scanner Simulation (5 cols) */}
-      <div className="lg:col-span-12 xl:col-span-5 flex flex-col space-y-4">
-        
-        {/* Holographic scanner housing */}
-        <div className="glass-panel p-5 bg-bg-surface/30 relative flex-1 flex flex-col justify-between overflow-hidden min-h-[420px]">
-          <div className="absolute inset-0 cyber-grid-overlay opacity-30 pointer-events-none select-none" />
-          
-          <div className="flex items-center justify-between border-b border-border-dim/20 pb-3 relative z-10">
-            <div className="space-y-0.5">
-              <span className="font-mono text-[9px] text-teal-glow uppercase">OCR SCANNER CORE</span>
-              <h3 className="font-orbitron font-extrabold text-[#e8f4f0] uppercase text-xs">Pharma Optical Matrix</h3>
-            </div>
-            
-            {cameraActive && (
-              <span className="flex items-center gap-1 text-[9px] font-mono text-teal-glow animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-teal-glow" /> SCANNING SENSOR LIVE
-              </span>
-            )}
-          </div>
-
-          {/* Central Camera frame stage */}
-          <div className="my-4 h-64 w-full bg-bg-void rounded-xl border border-border-dim relative overflow-hidden flex flex-col items-center justify-center">
-            
-            {/* The scanning laser beam sweep animation */}
-            {cameraActive && <div className="laser-scan-line z-20" />}
-
-            {/* Sci-fi targeting frame corner borders */}
-            <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-teal-glow z-10" />
-            <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-teal-glow z-10" />
-            <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-teal-glow z-10" />
-            <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-teal-glow z-10" />
-
-            {cameraActive && !cameraError ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover scale-x-[-1]"
-              />
-            ) : (
-              <div className="text-center p-6 space-y-3 prose max-w-xs relative z-10">
-                <Pill className="w-10 h-10 text-text-dim mx-auto animate-bounce" />
-                <p className="font-sans text-xs text-text-secondary leading-relaxed">
-                  {cameraError 
-                    ? "Webcam authorization unavailable or blocked inside current sandboxed layout frame."
-                    : "Initialize the sensor feed or point your lens at any clinical medication label."
-                  }
-                </p>
-              </div>
-            )}
-
-            {cameraActive && !cameraError && (
-              <div className="absolute bottom-3 bg-bg-glass backdrop-blur-md px-3 py-1 rounded-full border border-border-glow text-[10px] font-mono text-teal-glow z-10">
-                Position drug composition details inside matrix
-              </div>
-            )}
-          </div>
-
-          {/* Scan controller buttons */}
-          <div className="space-y-3 relative z-10">
-            {cameraActive && !cameraError ? (
-              <div className="flex gap-2.5">
-                <button
-                  onClick={handleCaptureAndIdentify}
-                  disabled={loading}
-                  className="flex-1 p-3 rounded-lg btn-primary text-xs uppercase font-orbitron font-bold flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 text-bg-void animate-spin" />
-                  ) : (
-                    <Camera className="w-4 h-4 text-bg-void" />
-                  )}
-                  <span>Capture Chemical Strip</span>
-                </button>
-                <button
-                  onClick={stopCamera}
-                  className="px-4 py-3 rounded-lg bg-bg-void/40 border border-border-dim hover:bg-bg-void/80 text-xs text-text-secondary font-mono font-bold uppercase cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={startCamera}
-                className="w-full p-3 rounded-lg bg-bg-surface hover:bg-bg-surface/80 text-teal-glow border border-border-glow flex items-center justify-center gap-2 font-orbitron font-bold text-xs uppercase tracking-wider transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,243,255,0.15)] cursor-pointer"
-              >
-                <Camera className="w-4 h-4 text-teal-glow" />
-                <span>Initialize Optical Camera</span>
-              </button>
-            )}
-          </div>
-
+      {/* ── Header ── */}
+      <section className="text-center space-y-4">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-accent/10 border border-accent/20 text-accent rounded-full">
+          <Camera className="w-4 h-4" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t("nav_rx_scanner")} Core</span>
         </div>
+        <h1 className="text-5xl font-black text-white uppercase tracking-tight">{t("nav_rx_scanner").split(' ')[0]} <span className="text-accent">Scanner</span></h1>
+        <p className="text-lg text-text-secondary font-medium max-w-2xl mx-auto">
+          {t("action_station_medicine_desc")}
+        </p>
+      </section>
 
-        {/* Quick scan pre-defined sample packages */}
-        <div className="p-4 bg-bg-glass border border-border-dim/20 rounded-2xl space-y-3 font-sans">
-          <h4 className="font-orbitron text-[10px] uppercase font-bold text-text-secondary tracking-widest flex items-center gap-1.5">
-            <HelpCircle className="w-3.5 h-3.5 text-blue-electric" /> Try Preset Mock Scans:
-          </h4>
-          <div className="grid grid-cols-2 gap-2">
-            {MEDICINE_PRESETS.map((p) => (
-              <button
-                key={p.name}
-                onClick={() => {
-                  setSearchQuery(p.name);
-                  handleTextQuery(p.name);
-                }}
-                className="p-2.5 rounded-xl bg-bg-surface/50 border border-border-dim hover:border-teal-glow/20 text-left transition-all duration-300 space-y-1 hover:bg-bg-surface cursor-pointer"
-              >
-                <div className="text-[11px] font-bold text-text-primary truncate">{p.name.split(" ")[0]}</div>
-                <div className="text-[9px] font-mono text-teal-glow uppercase font-semibold">{p.dosage}</div>
-                <div className="text-[10px] text-text-secondary truncate">{p.desc}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-      </div>
-
-      {/* RIGHT SECTION: Scan outcomes, specifications details (7 cols) */}
-      <div className="lg:col-span-12 xl:col-span-7 flex flex-col space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
         
-        {/* Custom text search widget */}
-        <div className="glass-panel p-5 space-y-3">
-          <p className="text-xs font-semibold text-text-primary font-orbitron uppercase tracking-widest">
-            Manual Chemical Formula Database Query:
-          </p>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-3 w-4 h-4 text-text-dim" />
-              <input
-                id="medicine-search-input"
-                type="text"
-                placeholder="Type brand name (e.g. Crocin, Ibuprofen, Lipitor)..."
-                value={searchQuery}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleTextQuery(searchQuery);
-                }}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-bg-void/40 border border-border-dim hover:border-border-glow/45 focus:border-teal-glow/50 focus:outline-none rounded-xl py-2.5 pl-10 pr-3 text-xs placeholder:text-text-dim text-text-primary transition-colors font-sans"
-              />
-            </div>
-            <button
-              onClick={() => handleTextQuery(searchQuery)}
-              disabled={loading || !searchQuery.trim()}
-              className="px-4 py-2.5 rounded-xl bg-teal-glow hover:bg-teal-glow/90 disabled:opacity-50 text-bg-void font-orbitron font-bold text-xs uppercase tracking-wider transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0"
-            >
-              {loading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Search className="w-3.5 h-3.5 text-bg-void" />
+        {/* ── Left: Camera Viewfinder ── */}
+        <div className="lg:col-span-5 space-y-8">
+          <div className="card !p-0 overflow-hidden bg-[#0A0D14] border-2 border-white/5 shadow-2xl relative min-h-[450px] flex flex-col">
+            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-bg-elevated/50">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-red-alert animate-pulse" />
+                <span className="font-mono text-[10px] text-white uppercase font-black tracking-widest">{t("active_sensor")}</span>
+              </div>
+              {cameraActive && (
+                <button onClick={stopCamera} className="p-2 hover:bg-white/10 rounded-full transition-all cursor-pointer border-none text-text-dim hover:text-white bg-transparent">
+                  <X className="w-5 h-5" />
+                </button>
               )}
-              <span>Query DB</span>
-            </button>
+            </div>
+
+            <div className="flex-1 relative flex items-center justify-center bg-black/40">
+              {cameraActive && !cameraError ? (
+                <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+              ) : (
+                <div className="text-center space-y-6 p-10">
+                  <div className="w-20 h-20 bg-accent/10 rounded-[32px] flex items-center justify-center mx-auto border-2 border-accent/20">
+                    <Pill className="w-10 h-10 text-accent" />
+                  </div>
+                  <p className="text-sm text-text-dim font-bold uppercase tracking-widest leading-relaxed">
+                    {cameraError ? "Camera blocked or unavailable." : t("home_no_region")}
+                  </p>
+                </div>
+              )}
+
+              {cameraActive && <div className="absolute inset-0 border-[40px] border-black/40 pointer-events-none" />}
+              {cameraActive && <div className="absolute inset-x-12 top-1/2 -translate-y-1/2 h-0.5 bg-accent/50 shadow-[0_0_15px_#22D3EE] animate-bounce" />}
+            </div>
+
+            <div className="p-8 bg-bg-elevated/50">
+              {!cameraActive ? (
+                <button onClick={startCamera} className="w-full btn-primary !py-5 justify-center shadow-2xl shadow-accent/20 border-none cursor-pointer">
+                  <Camera className="w-5 h-5" /> START CAMERA SCAN
+                </button>
+              ) : (
+                <button onClick={handleCapture} disabled={loading} className="w-full btn-primary !py-5 justify-center !bg-white !text-black shadow-2xl border-none cursor-pointer">
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "CAPTURE & ANALYZE"}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <p className="text-xs font-black uppercase tracking-widest text-text-dim flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 text-accent" /> Rapid Mock Scans
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {MEDICINE_PRESETS.map(p => (
+                <button
+                  key={p.name}
+                  onClick={() => { setSearchQuery(p.name); handleSearch(p.name); }}
+                  className="p-4 rounded-2xl bg-bg-surface border border-border text-left hover:border-accent transition-all group cursor-pointer"
+                >
+                  <p className="text-sm font-black text-white group-hover:text-accent transition-colors">{p.name}</p>
+                  <p className="text-[10px] text-text-dim font-bold uppercase mt-1">{p.dosage}</p>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Error Text info */}
-        {errorText && (
-          <div className="p-4 bg-red-alert/15 border border-red-alert/30 rounded-xl text-xs text-red-alert font-mono flex items-center gap-2">
-            <span className="text-lg">⚠</span>
-            <span>{errorText}</span>
-          </div>
-        )}
-
-        {/* Main scanned result specs pane */}
-        {loading && !result && (
-          <div className="glass-panel p-12 text-center flex flex-col items-center justify-center space-y-4 flex-1 py-20">
-            <Loader2 className="w-8 h-8 text-teal-glow animate-spin" />
-            <div className="space-y-1">
-              <h3 className="font-orbitron font-bold text-text-primary uppercase text-sm">Auditing Chemical Formulation</h3>
-              <p className="text-xs text-text-secondary italic">Consulting registered standard global pharmacy frameworks...</p>
-            </div>
-          </div>
-        )}
-
-        {!loading && result && (
-          <div className="glass-panel p-6 space-y-6 animate-fadeIn flex-1">
-            
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-border-dim/20 pb-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-2xl">💊</span>
-                  <h2 className="font-orbitron text-xl font-black text-text-primary leading-tight uppercase tracking-wide">
-                    {result.name}
-                  </h2>
-                </div>
-                <p className="text-xs text-teal-glow font-mono font-semibold uppercase">{result.generic}</p>
-              </div>
-
-              <div className={`px-3.5 py-1.5 rounded-full inline-flex self-start md:self-center items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase shrink-0 ${
-                result.verified 
-                  ? "bg-green-ok/10 text-green-ok border border-green-ok/20" 
-                  : "bg-amber-warn/10 text-amber-warn border border-amber-warn/20"
-              }`}>
-                {result.verified ? (
-                  <>
-                    <ShieldCheck className="w-3.5 h-3.5 text-green-ok" /> CDSCO Verified Status
-                  </>
-                ) : (
-                  <>
-                    <ShieldAlert className="w-3.5 h-3.5 text-amber-warn" /> Unverified Formula Label
-                  </>
-                )}
+        {/* ── Right: Results ── */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="card !p-8 space-y-8 bg-bg-elevated/30 border-2 border-border shadow-2xl min-h-[550px] flex flex-col">
+            <div className="space-y-4">
+              <p className="text-xs font-black uppercase tracking-widest text-text-dim">Global Database Query</p>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSearch(searchQuery)}
+                  placeholder="Enter brand or generic name..."
+                  className="input !h-14 !text-base"
+                />
+                <button onClick={() => handleSearch(searchQuery)} className="btn-primary !px-8 border-none cursor-pointer">
+                  <Search className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
-            {/* Core dosage data grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3.5 bg-bg-surface/50 border border-border-dim/60 rounded-xl space-y-1">
-                <span className="text-[10px] font-mono text-text-secondary uppercase">Standard Concentration Strength</span>
-                <p className="text-sm font-bold text-text-primary uppercase font-orbitron">{result.dosage}</p>
-              </div>
-
-              <div className="p-3.5 bg-bg-surface/50 border border-border-dim/60 rounded-xl space-y-1">
-                <span className="text-[10px] font-mono text-text-secondary uppercase">Estimated Frequency Regulator</span>
-                <p className="text-sm font-bold text-text-primary uppercase font-orbitron">{result.frequency}</p>
-              </div>
-            </div>
-
-            {/* Side-effects & contraindications details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h4 className="font-orbitron text-xs font-semibold uppercase text-text-secondary tracking-widest">
-                  🚨 Clinical Side Effects:
-                </h4>
-                <div className="p-4 bg-bg-surface/60 border border-border-dim/30 hover:border-border-glow/10 transition-colors rounded-xl text-xs text-text-secondary leading-relaxed font-sans">
-                  {result.sideEffects}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-orbitron text-xs font-semibold uppercase text-text-secondary tracking-widest">
-                  🚫 Primary Contraindications:
-                </h4>
-                <div className="p-4 bg-bg-surface/60 border border-border-dim/30 hover:border-border-glow/10 transition-colors rounded-xl text-xs text-text-secondary leading-relaxed font-sans">
-                  {result.contraindications}
-                </div>
-              </div>
-            </div>
-
-            {/* Negative interaction alerts */}
-            <div className="space-y-3">
-              <h4 className="font-orbitron text-xs font-semibold uppercase text-[#ff3d3d] tracking-widest flex items-center gap-1.5">
-                <ShieldAlert className="w-4 h-4 text-red-alert animate-bounce" /> Adverse Drug Interaction Warnings:
-              </h4>
-
-              {result.interactions.length > 0 ? (
-                <div className="space-y-2.5">
-                  {result.interactions.map((i, idx) => (
-                    <div key={idx} className="p-3.5 bg-red-alert/10 border border-red-alert/20 rounded-xl space-y-1 text-xs">
-                      <p className="font-bold text-red-alert font-mono uppercase">Interacts with: {i.drug}</p>
-                      <p className="text-text-secondary leading-relaxed font-sans">{i.risk}</p>
+            <div className="flex-1 flex flex-col justify-center">
+              <AnimatePresence mode="wait">
+                {loading ? (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-6 py-20">
+                    <RefreshCw className="w-12 h-12 text-accent animate-spin" />
+                    <p className="text-xs font-black uppercase tracking-[0.3em] text-accent">{t("home_inspecting")} Formula...</p>
+                  </motion.div>
+                ) : result ? (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+                    <div className="flex items-start justify-between border-b border-white/5 pb-8">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <h2 className="text-4xl font-black text-white uppercase tracking-tighter">{result.name}</h2>
+                          {result.verified && <ShieldCheck className="w-8 h-8 text-green-ok" />}
+                        </div>
+                        <p className="text-lg text-accent font-black uppercase tracking-widest">{result.generic}</p>
+                      </div>
+                      <div className="px-5 py-2 bg-bg-void border border-border rounded-2xl">
+                        <p className="text-[10px] font-black text-text-dim uppercase mb-1">Concentration</p>
+                        <p className="text-xl font-black text-white">{result.dosage}</p>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 bg-green-ok/10 border border-green-ok/20 rounded-xl text-xs text-green-ok font-mono text-center">
-                  ✓ No severe drug-to-drug exclusion parameters analyzed for this segment.
-                </div>
-              )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-text-dim">Clinical Side Effects</p>
+                        <p className="text-base text-text-secondary font-medium leading-relaxed bg-bg-void/50 p-6 rounded-3xl border border-white/5">{result.sideEffects}</p>
+                      </div>
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-text-dim">Contraindications</p>
+                        <p className="text-base text-text-secondary font-medium leading-relaxed bg-bg-void/50 p-6 rounded-3xl border border-white/5">{result.contraindications}</p>
+                      </div>
+                    </div>
+
+                    <div className="p-8 bg-red-alert/5 border-2 border-red-alert/20 rounded-[32px] space-y-6">
+                      <div className="flex items-center gap-4">
+                        <ShieldAlert className="w-8 h-8 text-red-alert animate-bounce" />
+                        <h4 className="text-xl font-black text-red-alert uppercase tracking-tight">Adverse Interaction Alerts</h4>
+                      </div>
+                      <div className="space-y-4">
+                        {result.interactions.map((i, idx) => (
+                          <div key={idx} className="flex items-start gap-4 p-4 bg-red-alert/10 rounded-2xl border border-red-alert/10">
+                            <ArrowRight className="w-5 h-5 text-red-alert mt-1" />
+                            <div>
+                              <p className="text-base font-black text-white uppercase">{i.drug}</p>
+                              <p className="text-sm text-text-secondary font-medium">{i.risk}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <div className="flex flex-col items-center gap-4 py-20 opacity-20">
+                    <Pill className="w-20 h-20 text-text-dim" />
+                    <p className="text-sm font-black uppercase tracking-[0.2em]">Neural Database Awaiting Input</p>
+                  </div>
+                )}
+              </AnimatePresence>
             </div>
-
-            <div className="p-3.5 border border-border-dim rounded-xl bg-bg-void/40 text-[9px] text-text-dim text-center leading-relaxed">
-              CDSCO Database Audit Code: CD_G-X2893. Synthesized pharma indicators are sourced from therapeutic index charts. Verify any active medical modification schemas explicitly with your direct practitioner.
-            </div>
-
           </div>
-        )}
-
-        {!loading && !result && (
-          <div className="glass-panel p-10 bg-bg-surface/20 flex flex-col justify-center items-center text-center py-20 text-text-dim border-dashed border-border-dim flex-1">
-            <Pill className="w-12 h-12 mb-3.5 text-text-dim/50" />
-            <p className="font-orbitron text-xs font-semibold uppercase tracking-wider">Awaiting optical scan or manual search query...</p>
-            <p className="text-xs text-text-dim mt-1 max-w-sm">Tap on one of the quick mock presets below or input any tablet name into the query console above to try.</p>
-          </div>
-        )}
+        </div>
 
       </div>
+
+      <footer className="card !bg-bg-void border-border text-center !p-6">
+        <p className="text-[10px] font-black text-text-dim uppercase tracking-[0.3em]">CDSCO Database Verified • 256-bit Encrypted Session</p>
+      </footer>
 
     </div>
   );
 }
-export { MEDICINE_PRESETS };

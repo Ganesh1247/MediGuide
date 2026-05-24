@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import Home from "./components/pages/Home";
 import SymptomChecker from "./components/pages/SymptomChecker";
 import MedicineScanner from "./components/pages/MedicineScanner";
 import VoiceInput from "./components/pages/VoiceInput";
-import HospitalFinder from "./components/pages/HospitalFinder";
 import FactChecker from "./components/pages/FactChecker";
 import Emergency from "./components/pages/Emergency";
+import NearbyHospitalsMap from "./components/pages/NearbyHospitalsMap";
 import AIAssistant from "./components/AIAssistant";
 import { useLanguage, LANGUAGES } from "./context/LanguageContext";
 import { useTheme } from "./context/ThemeContext";
@@ -14,18 +15,19 @@ import { BodyRegion } from "./types";
 import { BODY_REGIONS } from "./components/3d/HumanBodyCanvas";
 import {
   Pill, Activity, ShieldAlert, Speech, HelpCircle,
-  Siren, Globe, Sun, Moon, Hospital
+  Siren, Globe, Sun, Moon, MapPin, ChevronDown
 } from "lucide-react";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("home");
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage, t, activeLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
   const [selectedTriageRegion, setSelectedTriageRegion] = useState<BodyRegion | null>(null);
 
-  const handleNavigateToTab = (tabId: string, _extraState?: any) => {
+  const handleNavigateToTab = (tabId: string) => {
     setActiveTab(tabId);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleStartTriage = (region?: BodyRegion) => {
@@ -33,7 +35,7 @@ export default function App() {
     setActiveTab("symptom");
   };
 
-  const handleTriageRegionSelect = (region: BodyRegion, _customSymptom: string) => {
+  const handleTriageRegionSelect = (region: BodyRegion) => {
     setSelectedTriageRegion(region);
     setActiveTab("symptom");
   };
@@ -50,14 +52,13 @@ export default function App() {
           />
         );
       case "emergency":
-      case "hospitals-map":
         return <Emergency />;
       case "medicine":
         return <MedicineScanner />;
       case "voice":
         return <VoiceInput onTriageRegionSelect={handleTriageRegionSelect} />;
       case "hospitals":
-        return <HospitalFinder />;
+        return <NearbyHospitalsMap />;
       case "fact":
         return <FactChecker />;
       default:
@@ -66,224 +67,152 @@ export default function App() {
   };
 
   const navItems = [
-    { id: "home",      label: "Dashboard",       icon: Activity },
-    { id: "symptom",   label: "Symptom Check",   icon: ShieldAlert },
-    { id: "emergency", label: "Emergency",        icon: Siren, danger: true },
-    { id: "hospitals", label: "Find Hospital",    icon: Hospital },
-    { id: "medicine",  label: "Medicine Info",    icon: Pill },
-    { id: "voice",     label: "Voice Symptoms",   icon: Speech },
-    { id: "fact",      label: "Fact Checker",     icon: HelpCircle },
+    { id: "home",      label: t("home"),           icon: Activity },
+    { id: "symptom",   label: t("nav_triage_check"), icon: ShieldAlert },
+    { id: "hospitals", label: t("nav_hospitals_map"), icon: MapPin },
+    { id: "medicine",  label: t("nav_rx_scanner"), icon: Pill },
+    { id: "voice",     label: t("nav_vocal_synth"), icon: Speech },
+    { id: "fact",      label: t("nav_fact_audit"),   icon: HelpCircle },
   ];
 
-  const isActiveTab = (id: string) =>
-    activeTab === id || (id === "emergency" && activeTab === "hospitals-map");
-
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "var(--bg-void)",
-      overflowX: "hidden",
-      display: "flex",
-      flexDirection: "column",
-    }}>
+    <div className={`min-h-screen flex flex-col transition-colors duration-500 ${theme === 'dark' ? 'dark' : ''}`}>
+      <div className="bg-mesh-glow" />
 
-      {/* Ambient glows */}
-      <div style={{
-        position: "fixed", top: "5%", left: "5%", width: 500, height: 500,
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(249,115,22,0.04) 0%, transparent 65%)",
-        filter: "blur(80px)", pointerEvents: "none", zIndex: 0,
-      }} />
-      <div style={{
-        position: "fixed", bottom: "5%", right: "5%", width: 400, height: 400,
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(56,189,248,0.03) 0%, transparent 65%)",
-        filter: "blur(80px)", pointerEvents: "none", zIndex: 0,
-      }} />
+      {/* ── Wide Modern Header ────────────────────────────────────────────── */}
+      <header className="fixed top-0 left-0 right-0 z-50 nav-blur h-24 flex items-center shadow-[0_4px_30px_rgba(0,0,0,0.1)] border-b border-white/5">
+        <div className="w-full max-w-7xl mx-auto px-6 flex items-center justify-between">
 
-      {/* ── Header ────────────────────────────────────────────────────────── */}
-      <header style={{ width: "100%", maxWidth: 1280, margin: "0 auto", padding: "16px 20px", position: "relative", zIndex: 50 }}>
-        <nav style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          background: "var(--bg-surface)", border: "1px solid var(--border)",
-          borderRadius: 16, padding: "10px 16px", boxShadow: "var(--shadow-md)", gap: 12,
-        }}>
-
-          {/* Logo */}
+          {/* Logo Section */}
           <button
             onClick={() => handleNavigateToTab("home")}
-            style={{
-              display: "flex", alignItems: "center", gap: 10,
-              background: "none", border: "none", cursor: "pointer", padding: 0,
-            }}
+            className="flex items-center gap-4 cursor-pointer border-none bg-transparent group"
           >
-            <div style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: "var(--accent-muted)", border: "1px solid var(--border-accent)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <svg viewBox="0 0 50 50" style={{ width: 20, height: 20, stroke: "var(--accent)", fill: "none", strokeWidth: 2.5 }}>
-                <path d="M 0,25 L 12,25 L 18,10 L 22,40 L 26,25 L 50,25" />
-              </svg>
+            <div className="w-12 h-12 bg-gradient-to-tr from-accent to-blue rounded-2xl flex items-center justify-center shadow-lg shadow-accent/20 group-hover:rotate-6 transition-all duration-300">
+              <Activity className="w-7 h-7 text-black" />
             </div>
-            <div style={{ textAlign: "left" }}>
-              <span style={{
-                fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 18,
-                color: "var(--text-primary)", display: "block", lineHeight: 1,
-              }}>
+            <div className="text-left hidden md:block">
+              <span className="font-display font-black text-2xl tracking-tighter text-text-primary block leading-none">
                 MediGuide
               </span>
-              <span style={{
-                fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase",
-                letterSpacing: "0.1em", color: "var(--accent)", display: "block", marginTop: 2,
-              }}>
+              <span className="text-[10px] uppercase tracking-[0.25em] text-accent font-black mt-1 block">
                 {t("portal_subtitle")}
               </span>
             </div>
           </button>
 
-          {/* Desktop Nav */}
-          <div style={{
-            display: "none", alignItems: "center", gap: 2,
-            background: "var(--bg-elevated)", border: "1px solid var(--border)",
-            borderRadius: 12, padding: 4,
-          }} className="lg:flex">
+          {/* Navigation Section */}
+          <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-[22px] hidden lg:flex border border-white/5">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const active = isActiveTab(item.id);
+              const active = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => handleNavigateToTab(item.id)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    padding: "8px 12px", borderRadius: 9, border: "none", cursor: "pointer",
-                    fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12,
-                    transition: "all 0.2s",
-                    background: active
-                      ? item.danger ? "var(--red-alert)" : "var(--accent)"
-                      : "transparent",
-                    color: active ? "white" : item.danger ? "var(--red-alert)" : "var(--text-secondary)",
-                    boxShadow: active && item.danger ? "0 2px 10px rgba(239,68,68,0.3)"
-                      : active ? "var(--shadow-accent)" : "none",
-                  }}
+                  className={`relative flex items-center gap-2.5 px-5 py-3 rounded-[18px] font-bold text-sm transition-all border-none cursor-pointer group ${
+                    active
+                    ? "bg-accent text-black shadow-xl shadow-accent/10"
+                    : "text-text-secondary hover:text-white hover:bg-white/5"
+                  }`}
                 >
-                  <Icon style={{ width: 14, height: 14 }} />
-                  <span style={{ display: "none" }} className="xl:block">{item.label}</span>
+                  <Icon className={`w-4 h-4 ${active ? 'scale-110' : 'group-hover:scale-110'} transition-transform duration-300`} />
+                  <span>{item.label}</span>
+                  {active && (
+                    <motion.div
+                      layoutId="nav-glow"
+                      className="absolute inset-0 bg-accent rounded-[18px] -z-10 blur-sm opacity-20"
+                    />
+                  )}
                 </button>
               );
             })}
           </div>
 
-          {/* Right controls */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-
-            {/* Theme Toggle */}
+          {/* Utility Section */}
+          <div className="flex items-center gap-4">
             <button
               onClick={toggleTheme}
-              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              style={{
-                width: 36, height: 36, borderRadius: 10,
-                border: "1px solid var(--border-strong)",
-                background: "var(--bg-elevated)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", color: "var(--text-secondary)",
-                transition: "all 0.2s",
-              }}
+              className="w-11 h-11 rounded-2xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-text-secondary border-none cursor-pointer transition-all hover:scale-105 active:scale-95"
             >
-              {theme === "dark"
-                ? <Sun style={{ width: 16, height: 16, color: "var(--amber-warn)" }} />
-                : <Moon style={{ width: 16, height: 16 }} />
-              }
+              {theme === "dark" ? <Sun className="w-5 h-5 text-amber-warn" /> : <Moon className="w-5 h-5" />}
             </button>
 
-            {/* Language */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: 6,
-              border: "1px solid var(--border-strong)", borderRadius: 10, padding: "6px 10px",
-              background: "var(--bg-elevated)",
-            }}>
-              <Globe style={{ width: 14, height: 14, color: "var(--text-dim)", flexShrink: 0 }} />
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as any)}
-                style={{
-                  background: "transparent", border: "none", fontSize: 12,
-                  fontWeight: 600, color: "var(--text-secondary)", outline: "none",
-                  cursor: "pointer",
-                }}
-              >
-                {LANGUAGES.map((l) => (
-                  <option key={l.code} value={l.code}
-                    style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>
-                    {l.flag} {l.name}
-                  </option>
-                ))}
-              </select>
+            <div className="hidden sm:flex items-center gap-3 bg-accent/10 p-1.5 rounded-2xl border border-accent/20 hover:border-accent/40 transition-all group">
+              <div className="w-8 h-8 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/20">
+                <Globe className="w-4 h-4 text-black" />
+              </div>
+              <div className="relative">
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as any)}
+                  className="bg-transparent text-xs font-black text-accent uppercase tracking-widest outline-none border-none cursor-pointer appearance-none pr-6 font-display"
+                >
+                  {LANGUAGES.map(l => (
+                    <option key={l.code} value={l.code} className="bg-bg-surface text-white py-2">
+                      {l.flag} {l.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-accent pointer-events-none group-hover:translate-y-[-40%] transition-transform" />
+              </div>
             </div>
 
-            {/* Emergency CTA */}
-            <a
-              href="tel:108"
-              className="btn-danger"
-              style={{ padding: "8px 16px", fontSize: 12, borderRadius: 10, gap: 6 }}
+            <button
+              onClick={() => handleNavigateToTab("emergency")}
+              className={`px-7 py-3 rounded-2xl font-black text-sm flex items-center gap-2.5 transition-all shadow-lg border-none cursor-pointer group ${
+                activeTab === "emergency"
+                ? "bg-white text-red-alert"
+                : "bg-red-alert text-white shadow-red-alert/30 hover:brightness-110 active:scale-95"
+              }`}
             >
-              <Siren style={{ width: 14, height: 14 }} />
-              <span>108</span>
-            </a>
+              <Siren className="w-5 h-5 animate-pulse group-hover:scale-110 transition-transform" />
+              <span className="hidden xs:inline uppercase tracking-widest">108 SOS</span>
+            </button>
           </div>
-        </nav>
-
-        {/* Mobile Nav */}
-        <div style={{
-          display: "flex", gap: 6, marginTop: 10, overflowX: "auto",
-          paddingBottom: 4, scrollbarWidth: "none",
-        }} className="lg:hidden no-scrollbar">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActiveTab(item.id);
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavigateToTab(item.id)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
-                  fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 11,
-                  whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.2s",
-                  background: active
-                    ? item.danger ? "var(--red-alert)" : "var(--accent)"
-                    : "var(--bg-surface)",
-                  color: active ? "white"
-                    : item.danger ? "var(--red-alert)" : "var(--text-secondary)",
-                  border: active ? "none" : "1px solid var(--border)",
-                }}
-              >
-                <Icon style={{ width: 13, height: 13 }} />
-                {item.label}
-              </button>
-            );
-          })}
         </div>
       </header>
 
-      {/* ── Main ─────────────────────────────────────────────────────────────── */}
-      <main style={{
-        flex: 1, width: "100%", maxWidth: 1280,
-        margin: "0 auto", padding: "0 20px", position: "relative", zIndex: 10,
-      }}>
-        {renderActivePage()}
+      {/* ── Main Content ─────────────────────────────────────────────────── */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-6 pt-36 pb-32">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {renderActivePage()}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       <AIAssistant />
 
-      {/* ── Footer ───────────────────────────────────────────────────────────── */}
-      <footer style={{
-        width: "100%", maxWidth: 1280, margin: "0 auto",
-        padding: "24px 20px", textAlign: "center", position: "relative", zIndex: 20,
-        borderTop: "1px solid var(--border)",
-      }}>
-        <p style={{ fontSize: 12, color: "var(--text-dim)" }}>{t("footer_text_1")}</p>
-        <p style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 4 }}>{t("footer_text_2")}</p>
-      </footer>
+      {/* ── Modern Bottom Nav (Mobile) ─────────────────────────── */}
+      <nav className="lg:hidden fixed bottom-6 left-6 right-6 z-50">
+        <div className="nav-blur rounded-[32px] p-2.5 flex items-center justify-around shadow-2xl border border-white/10 max-w-lg mx-auto">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavigateToTab(item.id)}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all border-none bg-transparent cursor-pointer ${
+                  active ? "text-accent" : "text-text-dim"
+                }`}
+              >
+                <Icon className={`w-6 h-6 ${active ? "scale-125" : ""} transition-all duration-300`} />
+                <span className="text-[10px] font-black uppercase tracking-tighter opacity-0 h-0 data-[active=true]:opacity-100 data-[active=true]:h-auto transition-all" data-active={active}>
+                  {item.label.split(" ")[0]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

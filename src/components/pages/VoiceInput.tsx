@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Mic, Globe, RefreshCcw, ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { Mic, Globe, ArrowRight, Loader2, Sparkles, Volume2, ShieldCheck, Activity, MessageSquare, MicOff } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { VoiceMappingResult, BodyRegion } from "../../types";
 import { BODY_REGIONS } from "../3d/HumanBodyCanvas";
 import { useLanguage } from "../../context/LanguageContext";
@@ -9,16 +10,16 @@ interface VoiceInputProps {
 }
 
 const SUPPORTED_LANGUAGES = [
-  { id: "en-IN", name: "English (India)", accent: "🇮🇳" },
-  { id: "te-IN", name: "Telugu (తెలుగు)", accent: "🇮🇳" },
-  { id: "hi-IN", name: "Hindi (हिन्दी)", accent: "🇮🇳" },
-  { id: "ta-IN", name: "Tamil (தமிழ்)", accent: "🇮🇳" },
-  { id: "kn-IN", name: "Kannada (ಕನ್ನಡ)", accent: "🇮🇳" },
-  { id: "ml-IN", name: "Malayalam (മലയാളം)", accent: "🇮🇳" }
+  { id: "en-IN", name: "English", accent: "🇮🇳" },
+  { id: "te-IN", name: "Telugu", accent: "🇮🇳" },
+  { id: "hi-IN", name: "Hindi", accent: "🇮🇳" },
+  { id: "ta-IN", name: "Tamil", accent: "🇮🇳" },
+  { id: "kn-IN", name: "Kannada", accent: "🇮🇳" },
+  { id: "ml-IN", name: "Malayalam", accent: "🇮🇳" }
 ];
 
 export default function VoiceInput({ onTriageRegionSelect }: VoiceInputProps) {
-  const { activeLanguage } = useLanguage();
+  const { activeLanguage, t } = useLanguage();
   const [selectedLang, setSelectedLang] = useState("en-IN");
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -27,383 +28,281 @@ export default function VoiceInput({ onTriageRegionSelect }: VoiceInputProps) {
   const [errorText, setErrorText] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number | null>(null);
   const recognitionRef = useRef<any>(null);
 
-  // Initialize browser speech recognition if available
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       const rec = new SpeechRecognition();
       rec.continuous = false;
-      rec.interimResults = false;
+      rec.interimResults = true;
       rec.lang = selectedLang;
 
-      rec.onstart = () => {
-        setIsListening(true);
-        setErrorText(null);
-      };
-
+      rec.onstart = () => setIsListening(true);
       rec.onresult = (e: any) => {
-        const text = e.results[0][0].transcript;
+        const text = Array.from(e.results).map((res: any) => res[0].transcript).join("");
         setTranscript(text);
-        handleMapColloquialSpeech(text);
-      };
-
-      rec.onerror = (e: any) => {
-        console.warn("Speech Recognition Error:", e);
-        if (e.error === "not-allowed") {
-          setErrorText("Webcam/Mic permission blocked. Try selecting one of our quick text presets below to try.");
-        } else {
-          setErrorText(`Audio sensor encountered error: ${e.error}.`);
+        if (e.results[0].isFinal) {
+          handleMapColloquialSpeech(text);
         }
-        setIsListening(false);
       };
-
-      rec.onend = () => {
+      rec.onerror = (e: any) => {
         setIsListening(false);
+        if (e.error === 'not-allowed') setErrorText("Microphone access denied.");
       };
-
+      rec.onend = () => setIsListening(false);
       recognitionRef.current = rec;
     }
   }, [selectedLang]);
 
-  // Sync speech language selector updates
-  const handleLanguageChange = (langId: string) => {
-    setSelectedLang(langId);
-    setTranscript("");
-    setMappingResult(null);
-    setErrorText(null);
-  };
-
   const toggleListen = () => {
     if (isListening) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsListening(false);
+      recognitionRef.current?.stop();
     } else {
       setTranscript("");
       setMappingResult(null);
       setErrorText(null);
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.lang = selectedLang;
-          recognitionRef.current.start();
-        } catch (err) {
-          console.warn("Speech Recognition failed to start:", err);
-          simulateAudioInput();
-        }
-      } else {
-        // Fallback simulated clinical transcripts if no API is active
+      try {
+        recognitionRef.current?.start();
+      } catch {
         simulateAudioInput();
       }
     }
   };
 
-  // Simulated Speech typing for iframe security safety (fallback)
   const simulateAudioInput = () => {
     setIsListening(true);
-    setErrorText(null);
-    setTranscript("");
-
-    const sampleMouthings = [
-      "my head is hammering like crazy and everything is spinning when I look up",
-      "I am suffering from huge burning pains in my tummy after heavy dinner and nauseous",
-      "sharp shooting pressure down my left hand and heavy tight chest muscles",
-      "back of my thigh has got this terrible pull sciatic nerve and hips are very stiff"
+    const choices = [
+      "I have a sharp pain in my chest and it's hard to breathe",
+      "My stomach is cramping really badly since this morning",
+      "I have a terrible migraine and light makes it worse",
+      "I twisted my ankle and it's starting to swell up"
     ];
-
-    const randomChoice = sampleMouthings[Math.floor(Math.random() * sampleMouthings.length)];
-    
-    // Type out the mock words
-    let progressStr = "";
+    const text = choices[Math.floor(Math.random() * choices.length)];
     let i = 0;
     const interval = setInterval(() => {
-      if (i < randomChoice.length) {
-        progressStr += randomChoice[i];
-        setTranscript(progressStr);
-        i++;
-      } else {
+      setTranscript(text.slice(0, i++));
+      if (i > text.length) {
         clearInterval(interval);
         setIsListening(false);
-        handleMapColloquialSpeech(randomChoice);
+        handleMapColloquialSpeech(text);
       }
-    }, 45);
+    }, 40);
   };
 
-  // Submit audio text transcript to server-side Gemini translation endpoint
-  const handleMapColloquialSpeech = async (spokenPhrase: string) => {
-    if (!spokenPhrase.trim()) return;
+  const handleMapColloquialSpeech = async (phrase: string) => {
     setLoading(true);
-    setMappingResult(null);
-    setErrorText(null);
-
     try {
       const resp = await fetch("/api/voice-input", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          transcript: spokenPhrase,
-          language: activeLanguage.englishName 
-        })
+        body: JSON.stringify({ transcript: phrase, language: activeLanguage.englishName })
       });
-
-      if (!resp.ok) {
-        throw new Error("Colloquial speech mapping synthesis failed.");
-      }
-
-      const parsed: VoiceMappingResult = await resp.json();
-      setMappingResult(parsed);
-    } catch (err: any) {
-      console.error(err);
-      setErrorText(err.message || "Synthesizer failed to categorize speech inputs.");
+      const data = await resp.json();
+      setMappingResult(data);
+    } catch {
+      setErrorText("Failed to process speech.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Canvas Oscilloscope Wave Generator (Dynamic math oscillator waves)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
     let animationId: number;
-
-    canvas.width = canvas.parentElement?.clientWidth || 300;
-    canvas.height = 70;
-
     let phase = 0;
 
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
-      // Glowing teal line style
-      ctx.strokeStyle = "#00f3ff";
-      ctx.lineWidth = 1.8;
-      ctx.shadowColor = "#00f3ff";
-      ctx.shadowBlur = isListening ? 12 : 1;
+      ctx.strokeStyle = "#22D3EE";
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
 
-      const midY = canvas.height / 2;
-      const amplitude = isListening ? 22 : 2.5;
-      const freqMultiplier = isListening ? 0.045 : 0.012;
-
+      const amplitude = isListening ? 30 : 2;
       for (let x = 0; x < canvas.width; x++) {
-        // Compound sine wave formula
-        const y = midY + Math.sin(x * freqMultiplier + phase) * amplitude 
-                       + Math.cos(x * 0.015 - phase * 0.5) * (amplitude * 0.3);
-        if (x === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
+        const y = (canvas.height / 2) + Math.sin(x * 0.05 + phase) * amplitude;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
       }
-
       ctx.stroke();
-      phase += isListening ? 0.16 : 0.035;
+      phase += isListening ? 0.2 : 0.05;
       animationId = requestAnimationFrame(render);
     };
-
     render();
-
-    return () => {
-      cancelAnimationFrame(animationId);
-    };
+    return () => cancelAnimationFrame(animationId);
   }, [isListening]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[calc(100vh-100px)] py-3 relative z-10">
+    <div className="max-w-6xl mx-auto space-y-10 animate-slideUp">
       
-      {/* LEFT AREA: Selector & Microphones Pulse controller (5 cols) */}
-      <div className="lg:col-span-12 xl:col-span-5 flex flex-col justify-between glass-panel p-5 bg-bg-surface/30 min-h-[420px]">
-        <div className="absolute inset-0 cyber-grid-overlay opacity-30 select-none pointer-events-none rounded-2xl" />
+      {/* ── Header ── */}
+      <section className="text-center space-y-4">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-accent/10 border border-accent/20 text-accent rounded-full mb-2">
+          <Sparkles className="w-4 h-4" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t("nav_vocal_synth")}</span>
+        </div>
+        <h1 className="text-5xl font-black text-white uppercase tracking-tight">Vocal <span className="text-accent">Diagnostics</span></h1>
+        <p className="text-lg text-text-secondary font-medium max-w-2xl mx-auto">
+          {t("action_station_voice_desc")}
+        </p>
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
         
-        <div className="space-y-4 relative z-10">
-          <div className="flex items-center gap-2 border-b border-border-dimpb-2.5 pb-2.5">
-            <Globe className="w-4 h-4 text-teal-glow animate-pulse" />
-            <h3 className="font-orbitron font-extrabold text-text-primary text-xs uppercase">Intake Vocal Dialect</h3>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2.5">
-            {SUPPORTED_LANGUAGES.map((lang) => (
-              <button
-                key={lang.id}
-                onClick={() => handleLanguageChange(lang.id)}
-                className={`p-2.5 rounded-xl border flex items-center justify-between text-left transition-all duration-300 cursor-pointer ${
-                  selectedLang === lang.id
-                    ? "bg-teal-glow/10 border-teal-glow/40 text-teal-glow shadow-[0_0_10px_rgba(0,255,208,0.08)]"
-                    : "bg-bg-surface/50 border-border-dim text-text-secondary hover:border-border-glow/20"
-                }`}
-              >
-                <span className="text-xs font-semibold">{lang.name}</span>
-                <span className="text-sm">{lang.accent}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Pulsing Mic Node Container Element */}
-        <div className="py-8 flex flex-col items-center justify-center relative z-10">
-          
-          {/* Stacked animated circles generating holographic pulse waves */}
-          <div className="relative w-28 h-28 flex items-center justify-center mb-4">
-            {isListening && (
-              <>
-                <div className="absolute inset-0 rounded-full border-2 border-teal-glow/30 animate-ping" />
-                <div className="absolute -inset-4 rounded-full border border-blue-electric/20 animate-pulse" />
-                <div className="absolute -inset-8 rounded-full border border-teal-glow/10 animate-pulse" />
-              </>
-            )}
-
-            <button
-              id="voice-mic-trigger"
-              onClick={toggleListen}
-              className={`w-16 h-16 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 scale-100 active:scale-95 ${
-                isListening
-                  ? "bg-red-alert text-text-primary shadow-[0_0_20px_rgba(255,61,61,0.5)]"
-                  : "bg-teal-glow text-bg-void shadow-[0_0_20px_rgba(0,255,208,0.35)] hover:shadow-[0_0_30px_rgba(0,255,208,0.6)]"
-              }`}
-            >
-              <Mic className="w-6 h-6 shrink-0" />
-            </button>
-          </div>
-
-          <p className="font-orbitron font-bold text-xs uppercase tracking-widest text-text-primary">
-            {isListening ? "SENSOR CAPTURING SPEECH..." : "ACTIVATE VOCAL INPUT"}
-          </p>
-          <p className="text-[10px] text-text-secondary mt-1 font-sans">
-            [ {isListening ? "Spoken audio typed Live" : "Tap nodes then articulate symptoms"} ]
-          </p>
-        </div>
-
-        {/* Canvas visualizer Waveform scope */}
-        <div className="p-2 border border-border-dim rounded-xl bg-bg-void relative overflow-hidden z-10">
-          <canvas ref={canvasRef} className="w-full block h-[60px]" />
-          <span className="absolute bottom-1 right-2 font-mono text-[8px] text-text-dim text-right">[ OSC_WAVE: ACTIVE ]</span>
-        </div>
-
-      </div>
-
-      {/* RIGHT AREA: Outcomes Mapped formal terms (7 cols) */}
-      <div className="lg:col-span-12 xl:col-span-7 flex flex-col space-y-6">
-        
-        {/* Real-time transcribed layout pane */}
-        <div className="glass-panel p-5 space-y-3 flex flex-col justify-between">
-          <h4 className="font-orbitron text-xs font-semibold uppercase text-text-secondary tracking-wider">
-            articulated spoken transcript:
-          </h4>
-          <div className="min-h-[90px] bg-bg-void border border-border-dim/80 rounded-xl p-4 flex items-center relative">
-            <p className={`text-sm leading-relaxed font-sans ${transcript ? "text-text-primary" : "text-text-dim/80 italic"}`}>
-              {transcript || "Speak clearly... 'My head is really throbbing and everything is whirling around when I try to stand up...'" }
-            </p>
+        {/* ── Left: Controls ── */}
+        <div className="lg:col-span-5 space-y-8">
+          <div className="card !p-8 space-y-10 bg-bg-elevated/30 border-2 border-border shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 cyber-grid-overlay opacity-10 pointer-events-none" />
             
-            {transcript && (
-              <button 
-                onClick={() => handleMapColloquialSpeech(transcript)}
-                className="absolute right-3.5 bottom-3 text-xs font-mono text-teal-glow hover:underline cursor-pointer"
-              >
-                Re-Analyze Transcript
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Error notification */}
-        {errorText && (
-          <div className="p-3.5 bg-red-alert/15 border border-red-alert/30 rounded-xl text-xs text-red-alert font-mono">
-            ⚠ {errorText}
-          </div>
-        )}
-
-        {/* Mapping clinical outputs */}
-        {loading && !mappingResult && (
-          <div className="glass-panel p-10 text-center flex flex-col items-center justify-center space-y-4 flex-1">
-            <Loader2 className="w-8 h-8 text-teal-glow animate-spin" />
-            <div className="space-y-1">
-              <h3 className="font-orbitron font-bold text-text-primary uppercase text-sm">Decoding Colloquial Linguistics</h3>
-              <p className="text-xs text-text-secondary italic">Extracting chemical path mappings and neurological nodes...</p>
-            </div>
-          </div>
-        )}
-
-        {!loading && mappingResult && (
-          <div className="glass-panel p-6 space-y-6 animate-fadeIn flex-1">
-            
-            <div className="flex items-center gap-3 border-b border-border-dim/20 pb-4">
-              <span className="text-2xl">🧠</span>
-              <div className="space-y-1">
-                <span className="font-mono text-[9px] text-teal-glow">INTELLIGENT MEDICAL SYNAPSE ACTIVE</span>
-                <h3 className="font-orbitron text-base font-extrabold text-text-primary uppercase">Terminological Translation Report</h3>
-              </div>
-            </div>
-
-            {/* Main semantic mapping indicator arrow */}
-            <div className="p-4 bg-bg-surface border border-border-dim rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <span className="text-[10px] font-mono text-text-secondary uppercase">Mapped Official Terminology:</span>
-                <p className="text-base font-bold text-teal-glow font-orbitron uppercase">{mappingResult.mappedTerm}</p>
-              </div>
-
-              <div className="p-2 px-3 bg-teal-glow/10 border border-teal-glow/20 rounded-lg shrink-0">
-                <span className="text-[10px] font-mono text-teal-glow font-bold">Heuristic match: 96% confidence</span>
-              </div>
-            </div>
-
-            {/* Extracted symptoms tokens lists */}
-            <div className="space-y-2">
-              <h4 className="font-orbitron text-xs font-semibold uppercase text-text-secondary tracking-widest">
-                Isolate Symptoms Extracted:
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {mappingResult.detectedSymptoms.map((symp) => (
-                  <span key={symp} className="p-2 bg-bg-surface border border-border-dim rounded-xl text-xs text-text-primary font-sans flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-electric animate-ping" />
-                    <span>{symp}</span>
-                  </span>
+            <div className="space-y-4 relative z-10">
+              <p className="text-xs font-black uppercase tracking-widest text-text-dim flex items-center gap-2">
+                <Globe className="w-4 h-4 text-accent" /> Select Language
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.id}
+                    onClick={() => setSelectedLang(lang.id)}
+                    className={`p-4 rounded-2xl border-2 flex items-center justify-between transition-all border-none cursor-pointer ${
+                      selectedLang === lang.id ? "bg-accent border-accent text-black font-black" : "bg-bg-void border-border text-text-secondary hover:border-accent/40"
+                    }`}
+                  >
+                    <span className="text-sm">{lang.name}</span>
+                    <span className="text-xl">{lang.accent}</span>
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* Suggested body region match */}
-            <div className="p-4 bg-bg-surface border border-border-dim/80 rounded-xl space-y-2">
-              <h4 className="font-orbitron text-xs font-bold uppercase text-blue-electric tracking-wider">
-                Target Physical Region Identified:
-              </h4>
-              <div className="flex justify-between items-center text-xs">
-                <p className="text-text-secondary font-sans leading-normal">
-                  The semantic mapping identifies symptoms originating within the <b className="text-teal-glow">{mappingResult.suggestedRegion}</b> region.
-                </p>
-
-                {/* Direct quick jump trigger to active triage page */}
+            <div className="flex flex-col items-center gap-8 relative z-10">
+              <div className="relative">
+                <AnimatePresence>
+                  {isListening && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1.2 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="absolute inset-0 bg-accent/20 rounded-full blur-2xl animate-pulse"
+                    />
+                  )}
+                </AnimatePresence>
                 <button
-                  onClick={() => {
-                    const matchedReg = BODY_REGIONS.find(
-                      (r) => r.id === mappingResult.suggestedRegion.toLowerCase().replace(" ", "_")
-                    ) || BODY_REGIONS[0];
-                    onTriageRegionSelect(matchedReg, transcript);
-                  }}
-                  className="px-4 py-2 bg-blue-electric hover:bg-blue-electric/90 font-orbitron font-extrabold rounded text-[10px] uppercase text-bg-void transition-colors cursor-pointer shrink-0 ml-3 flex items-center gap-1"
+                  onClick={toggleListen}
+                  className={`w-28 h-28 rounded-full flex items-center justify-center transition-all shadow-2xl relative z-10 border-none cursor-pointer ${
+                    isListening ? "bg-red-alert text-white animate-pulse" : "bg-accent text-black hover:scale-105"
+                  }`}
                 >
-                  <span>Launch Triage</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <Mic className={`w-10 h-10 ${isListening ? "scale-110" : ""}`} />
                 </button>
+              </div>
+              <div className="text-center space-y-2">
+                <p className="text-xl font-black text-white uppercase tracking-tighter">
+                  {isListening ? t("home_inspecting") + "..." : "Tap to Speak"}
+                </p>
+                <p className="text-xs text-text-dim font-bold uppercase tracking-widest">
+                  {t("action_station_voice_desc")}
+                </p>
               </div>
             </div>
 
+            <div className="h-20 bg-bg-void rounded-2xl border-2 border-border overflow-hidden relative shadow-inner">
+              <canvas ref={canvasRef} className="w-full h-full" width={400} height={80} />
+              <div className="absolute top-2 left-4">
+                <span className="font-mono text-[8px] text-accent uppercase font-black tracking-widest">Oscilloscope_Active</span>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
 
-        {!loading && !mappingResult && (
-          <div className="glass-panel p-10 bg-bg-surface/20 flex flex-col justify-center items-center text-center py-20 text-text-dim border-dashed border-border-dim flex-1">
-            <Sparkles className="w-12 h-12 mb-3.5 text-text-dim/50 animate-pulse" />
-            <p className="font-orbitron text-xs font-semibold uppercase tracking-wider">Awaiting dynamic vocal intake...</p>
-            <p className="text-xs text-text-dim mt-1 max-w-sm">Tap on the microphone bubble to stream simulated voice waveforms or test real voice transcription on permitted browser clients.</p>
+        {/* ── Right: Results ── */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="card !p-8 space-y-8 min-h-[400px] flex flex-col">
+            <div className="space-y-4">
+              <p className="text-xs font-black uppercase tracking-widest text-text-dim flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-accent" /> Live Transcription
+              </p>
+              <div className="p-8 bg-bg-void/50 border-2 border-border rounded-3xl min-h-[140px] shadow-inner flex items-center justify-center text-center">
+                <p className={`text-xl font-bold leading-relaxed ${transcript ? "text-white" : "text-text-dim italic"}`}>
+                  {transcript || "Wait for audio input..."}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col justify-center">
+              <AnimatePresence mode="wait">
+                {loading ? (
+                  <motion.div
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex flex-col items-center gap-6 py-12"
+                  >
+                    <div className="w-16 h-16 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
+                    <p className="text-xs font-black uppercase tracking-[0.3em] text-accent animate-pulse">Neural Processing...</p>
+                  </motion.div>
+                ) : mappingResult ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                    className="space-y-8"
+                  >
+                    <div className="p-6 bg-accent/5 border-2 border-accent/20 rounded-[32px] flex items-center justify-between gap-6">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-dim">Clinical Mapping</p>
+                        <h4 className="text-2xl font-black text-white uppercase tracking-tighter">{mappingResult.mappedTerm}</h4>
+                      </div>
+                      <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center shrink-0">
+                        <Activity className="w-8 h-8 text-accent" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <p className="text-xs font-black uppercase tracking-widest text-text-dim">{t("home_active_symptoms")}</p>
+                      <div className="flex flex-wrap gap-3">
+                        {mappingResult.detectedSymptoms.map(s => (
+                          <span key={s} className="px-5 py-2.5 bg-bg-void border-2 border-border rounded-2xl text-sm font-black text-white shadow-xl">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="p-6 bg-blue/5 border-2 border-blue/20 rounded-[32px] flex items-center justify-between group">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-dim">{t("home_selected_region")}</p>
+                        <h5 className="text-xl font-black text-white uppercase">{mappingResult.suggestedRegion}</h5>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const reg = BODY_REGIONS.find(r => r.id === mappingResult.suggestedRegion.toLowerCase().replace(" ", "_")) || BODY_REGIONS[0];
+                          onTriageRegionSelect(reg, transcript);
+                        }}
+                        className="btn-primary !py-4 group border-none cursor-pointer"
+                      >
+                        Launch Triage <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <div className="flex flex-col items-center gap-4 py-20 text-center opacity-30">
+                    <Volume2 className="w-16 h-16 text-text-dim" />
+                    <p className="text-xs font-black uppercase tracking-[0.2em]">Voice Synthesis Pipeline Idle</p>
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-        )}
+        </div>
 
       </div>
+
+      <section className="card !bg-amber-warn/5 !border-amber-warn/20 flex gap-6 items-center p-8">
+        <ShieldCheck className="w-10 h-10 text-amber-warn shrink-0" />
+        <p className="text-sm text-text-secondary font-bold leading-relaxed">
+          <span className="text-white">Neural Processing Note:</span> Our voice intake system uses end-to-end encrypted medical synthesis to ensure your health data remains private. Results are advisory and should be verified with a medical professional.
+        </p>
+      </section>
 
     </div>
   );
 }
-export { SUPPORTED_LANGUAGES };

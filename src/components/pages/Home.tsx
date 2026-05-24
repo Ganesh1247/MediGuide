@@ -1,23 +1,26 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import HumanBodyCanvas from "../3d/HumanBodyCanvas";
+import HumanBodyCanvas, { BODY_REGIONS } from "../3d/HumanBodyCanvas";
 import { BodyRegion } from "../../types";
 import {
   ShieldAlert,
-  Cpu,
   Pill,
   Speech,
   HelpCircle,
   Siren,
-  AlertTriangle,
   X,
   Activity,
   Play,
-  Info,
   ChevronRight,
   MapPin,
   Heart,
-  Hospital
+  Thermometer,
+  ShieldCheck,
+  Stethoscope,
+  Info,
+  Clock,
+  ArrowRight,
+  Lock
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -34,411 +37,408 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
   const services = [
     {
       id: "symptom",
-      title: "Symptom Checker",
-      desc: "Tap body parts to identify clinical concerns and get instant triage guidelines.",
-      image: "/symptom_triage.png",
-      tag: "Trending",
+      title: t("nav_triage_check"),
+      desc: t("home_desc"),
+      image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800",
+      tag: "Clinical",
       icon: ShieldAlert,
-      accent: "#EF4444",
+      accent: "var(--accent)",
     },
     {
       id: "hospitals",
-      title: "Hospital Finder",
-      desc: "Find hospitals by specialty type near your GPS location — cardiology, neurology, maternity and more.",
-      image: "/er_dispatch.png",
-      tag: "GPS Live",
-      icon: Hospital,
-      accent: "#F97316",
+      title: t("nav_hospitals_map"),
+      desc: t("action_station_dispatch_desc"),
+      image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800",
+      tag: "Live Map",
+      icon: MapPin,
+      accent: "var(--blue)",
     },
     {
       id: "medicine",
-      title: "Medicine Scanner",
-      desc: "Scan prescription labels to instantly extract compounds, dosage and interaction warnings.",
-      image: "/rx_scanner.png",
-      tag: "New",
+      title: t("nav_rx_scanner"),
+      desc: t("action_station_medicine_desc"),
+      image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=800",
+      tag: "Smart Rx",
       icon: Pill,
-      accent: "#38BDF8",
+      accent: "var(--green-ok)",
     },
     {
       id: "fact",
-      title: "Health Fact Checker",
-      desc: "Verify wellness myths and viral health claims against official scientific evidence.",
-      image: "/myth_auditor.png",
-      tag: "AI Checked",
+      title: t("nav_fact_audit"),
+      desc: t("action_station_claim_desc"),
+      image: "https://images.unsplash.com/photo-1505751172107-1293a74313d4?auto=format&fit=crop&q=80&w=800",
+      tag: "AI Verified",
       icon: HelpCircle,
-      accent: "#22C55E",
+      accent: "var(--amber-warn)",
     },
   ];
 
   const quickStats = [
-    { label: "Pulmonary Rate", value: "72 bpm", status: "Normal", color: "text-red-alert", bg: "bg-red-alert/10" },
-    { label: "SpO2 Saturation", value: "98%", status: "Normal", color: "text-green-ok", bg: "bg-green-ok/10" },
-    { label: "Core Temp", value: "98.4 °F", status: "Normal", color: "text-amber-warn", bg: "bg-amber-warn/10" }
+    { label: t("home_active_symptoms").split(' ')[0] + " Rate", value: "72 bpm", color: "var(--red-alert)", icon: Heart },
+    { label: "Oxygen", value: "98%", color: "var(--accent)", icon: Activity },
+    { label: "Temp", value: "98.4 °F", color: "var(--amber-warn)", icon: Thermometer }
   ];
 
   return (
-    <div className="space-y-12 py-6 relative z-10 animate-fadeIn font-sans">
+    <div className="space-y-24 animate-fadeIn">
       
-      {/* ── 1. CINEMATIC BILLBOARD / SPOTLIGHT HERO ── */}
-      <div className="relative rounded-3xl overflow-hidden glass-panel border border-border-dim/40 shadow-2xl h-[450px] md:h-[480px] flex flex-col justify-end p-6 md:p-12">
-        {/* Billboard cinematic backdrop overlay */}
-        <div className="absolute inset-0 bg-cover bg-center z-0 opacity-40 mix-blend-overlay transition-all duration-500 scale-105 hover:scale-100" style={{ backgroundImage: "url('/symptom_triage.png')" }} />
-        
-        {/* Smooth cinematic bottom gradient fading into background */}
-        <div className="absolute inset-0 bg-gradient-to-t from-bg-void via-bg-void/60 to-transparent z-1" />
-        
-        {/* Animated grid aesthetic in hero */}
-        <div className="absolute inset-0 cyber-grid-overlay opacity-15 pointer-events-none z-1" />
-
-        <div className="relative z-10 max-w-3xl space-y-4 text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-alert/15 border border-red-alert/30 text-red-alert rounded-full">
-            <span className="w-1.5 h-1.5 bg-red-alert rounded-full animate-ping" />
-            <span className="font-mono text-[9px] uppercase tracking-widest font-black">
-              Featured Clinical System
-            </span>
-          </div>
-
-          <h1 className="font-orbitron text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.05] text-text-primary">
-            {t("home_title").split(" ")[0]} <span className="bg-gradient-to-r from-teal-glow to-blue-electric bg-clip-text text-transparent">{t("home_title").split(" ").slice(1).join(" ")}</span>
-          </h1>
-
-          <p className="text-sm md:text-base text-text-secondary leading-relaxed font-normal max-w-xl">
-            {t("home_desc")}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-3 pt-3">
-            <button
-              onClick={() => onStartTriage()}
-              className="px-6 py-3.5 rounded-xl bg-teal-glow hover:bg-teal-mid text-white font-orbitron font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-[0_4px_18px_rgba(124,58,237,0.3)] flex items-center gap-2 cursor-pointer border-0"
-            >
-              <Play className="w-4 h-4 fill-current text-white" />
-              <span>{t("home_start_quick_triage")}</span>
-            </button>
-            <button
-              onClick={() => onNavigateToTab("emergency")}
-              className="px-6 py-3.5 rounded-xl bg-red-alert hover:bg-red-alert/90 text-white font-orbitron font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-[0_4px_18px_rgba(220,38,38,0.25)] flex items-center gap-2 cursor-pointer border-0"
-            >
-              <Siren className="w-4 h-4 text-white animate-pulse" />
-              <span>Emergency Services</span>
-            </button>
-            <button
-              onClick={() => onNavigateToTab("fact")}
-              className="px-5 py-3.5 rounded-xl bg-bg-surface border border-border-dim hover:border-teal-glow/50 text-text-primary font-orbitron font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer"
-            >
-              <Info className="w-4 h-4 text-text-secondary" />
-              <span>Truth Auditor</span>
-            </button>
-          </div>
+      {/* ── 1. Cinematic Hero Section ── */}
+      <section className="relative rounded-[48px] overflow-hidden bg-bg-surface border border-white/5 shadow-2xl min-h-[600px] flex items-center p-8 lg:p-20 group">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-r from-bg-surface via-bg-surface/80 to-transparent z-10" />
+          <motion.img
+            initial={{ scale: 1.1, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.3 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            src="https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=1200"
+            className="w-full h-full object-cover grayscale brightness-50"
+            alt="Clinical background"
+          />
+          <div className="absolute inset-0 cyber-grid-overlay opacity-20" />
         </div>
-      </div>
 
-      {/* ── 2. DIAGNOSTICS THEATER (3D MODEL widescreen panel) ── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-2">
-          <div>
-            <h2 className="font-orbitron font-extrabold text-lg md:text-xl uppercase tracking-wider text-text-primary">
-              3D Interactive Diagnostic Theater
+        <div className="relative z-10 max-w-2xl space-y-10">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="inline-flex items-center gap-3 px-6 py-2.5 bg-accent/10 border border-accent/30 text-accent rounded-2xl shadow-xl backdrop-blur-md"
+          >
+            <Activity className="w-5 h-5 animate-pulse" />
+            <span className="text-[11px] font-black uppercase tracking-[0.3em]">MediGuide Intelligence v3.0</span>
+          </motion.div>
+
+          <div className="space-y-6">
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="font-display text-6xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9]"
+            >
+              Your Health, <br/> <span className="text-accent italic">Reimagined.</span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-xl text-text-secondary font-medium leading-relaxed max-w-lg"
+            >
+              {t("home_desc")}
+            </motion.p>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-wrap gap-6 pt-4"
+          >
+            <button onClick={() => onStartTriage()} className="btn-primary !py-6 !px-10 group relative overflow-hidden border-none">
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+              <Play className="w-6 h-6 fill-current relative z-10" />
+              <span className="relative z-10 text-base">{t("initialize_checkup")}</span>
+            </button>
+            <button onClick={() => onNavigateToTab("emergency")} className="btn-danger !py-6 !px-10 group border-none">
+              <Siren className="w-6 h-6 animate-pulse group-hover:rotate-12 transition-transform" />
+              <span className="text-base uppercase tracking-widest">{t("sos_center")}</span>
+            </button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── 2. Interactive 3D Hub ── */}
+      <section className="space-y-8 relative">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
+          <div className="space-y-2">
+            <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20">
+                <Stethoscope className="w-6 h-6 text-accent" />
+              </div>
+              {t("interactive_3d_hub")}
             </h2>
-            <p className="text-xs text-text-dim font-sans mt-0.5">
-              Interact with the cybernetic clinical avatar to locate symptoms
+            <p className="text-text-secondary font-medium max-w-xl">
+              {t("select_region_desc")}
             </p>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* Left / Torso metadata feedback block */}
-          <div className="lg:col-span-4 flex flex-col justify-between space-y-6 glass-panel rounded-3xl p-6 bg-bg-surface shadow-sm">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-glow/10 border border-teal-glow/20 rounded-full">
-                <Cpu className="w-3.5 h-3.5 text-teal-glow" />
-                <span className="font-mono text-[9px] uppercase tracking-wider text-teal-glow">Holographic Feedback</span>
-              </div>
-
-              <h3 className="font-orbitron text-xl font-bold tracking-tight text-text-primary leading-tight">
-                Anatomical Region Classification
-              </h3>
-              
-              <p className="text-xs text-text-secondary leading-relaxed">
-                Clicking on different sections of the 3D clinical model will isolate symptom profiles, localized pain matrices, and let you launch specialized triage audits instantly.
-              </p>
-            </div>
-
-            {/* Dynamic Region details display box */}
-            <div className="p-4 bg-bg-void border border-border-dim rounded-2xl space-y-3 relative overflow-hidden transition-all duration-300">
-              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-teal-glow/5 to-transparent rounded-tr-xl pointer-events-none" />
-              
-              <h4 className="font-orbitron text-[10px] font-bold uppercase text-text-dim tracking-widest flex items-center gap-1.5">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-teal-glow animate-ping" />
-                Sensors Status: Active
-              </h4>
-
-              {hoveredRegion ? (
-                <div className="space-y-2.5 animate-fadeIn">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{hoveredRegion.icon}</span>
-                    <span className="text-sm font-extrabold text-teal-glow font-orbitron uppercase tracking-wide">{hoveredRegion.label}</span>
-                  </div>
-                  <p className="text-[11px] text-text-secondary leading-relaxed line-clamp-3">{hoveredRegion.description}</p>
-                  
-                  <div className="flex items-center gap-1.5 pt-1 text-[10px] font-mono text-teal-glow font-semibold">
-                    <span className="inline-block w-1.5 h-1.5 bg-teal-glow rounded-full" />
-                    <span>Symptoms Indexed: {hoveredRegion.symptoms.length}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-6 text-text-dim text-xs font-mono select-none">
-                  [ WAITING_FOR_BODY_TAP ]
-                </div>
-              )}
-            </div>
-
-            {/* Micro stats indicators */}
-            <div className="grid grid-cols-2 gap-4 border-t border-border-dim/20 pt-4 font-mono">
-              <div>
-                <div className="text-xl font-bold text-teal-glow leading-none">98.2%</div>
-                <span className="text-[8.5px] text-text-dim uppercase tracking-wider mt-1 block">Triage Match Rate</span>
-              </div>
-              <div>
-                <div className="text-xl font-bold text-blue-electric leading-none">CDSCO</div>
-                <span className="text-[8.5px] text-text-dim uppercase tracking-wider mt-1 block">Regulated Library</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right/Center 3D Canvas Box - Grid Matrix/Scanlines removed for a clean clinical viewport */}
-          <div className="lg:col-span-8 glass-panel rounded-3xl p-4 bg-bg-surface relative min-h-[450px] shadow-sm flex items-center justify-center overflow-hidden">
-            <div className="absolute top-4 left-4 z-10 pointer-events-none">
-              <span className="font-mono text-[9px] text-text-dim tracking-wider uppercase block">RENDER_VIEW: HIGH_FIDELITY_ANATOMY</span>
-              <span className="text-[10px] text-text-secondary">Tap body parts for diagnosis</span>
-            </div>
-
-            <div className="w-full h-full min-h-[400px] flex items-center justify-center relative">
-              <HumanBodyCanvas
-                onRegionHover={setHoveredRegion}
-                onRegionSelect={(reg) => setSelectedRegionForTriage(reg)}
-                selectedRegionId={hoveredRegion?.id || null}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 3. NETFLIX-STYLE CATEGORY ROW: TRENDING DIAGNOSTIC SERVICES ── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-2">
-          <div>
-            <h2 className="font-orbitron font-extrabold text-lg md:text-xl uppercase tracking-wider text-text-primary">
-              Trending Services
-            </h2>
-            <p className="text-xs text-text-dim mt-0.5">
-              Select one of our secure digital health screening suites
-            </p>
-          </div>
-        </div>
-
-        {/* Services grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {services.map((svc) => {
-            const SvcIcon = svc.icon;
-            return (
-              <div
-                key={svc.id}
-                onClick={() => onNavigateToTab(svc.id)}
-                style={{
-                  borderRadius: 18, overflow: "hidden",
-                  background: "var(--bg-surface)", border: "1px solid var(--border)",
-                  boxShadow: "var(--shadow-sm)", cursor: "pointer",
-                  display: "flex", flexDirection: "column", height: 300,
-                  transition: "all 0.25s ease",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)";
-                  (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-lg)";
-                  (e.currentTarget as HTMLElement).style.borderColor = svc.accent + "50";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-                  (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-sm)";
-                  (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-                }}
+          <div className="flex gap-3">
+            {BODY_REGIONS.slice(0, 3).map(r => (
+              <button
+                key={r.id}
+                onClick={() => onStartTriage(r)}
+                className="px-6 py-2.5 rounded-2xl bg-bg-surface border border-border text-xs font-black uppercase text-text-dim hover:border-accent hover:text-white transition-all cursor-pointer shadow-lg"
               >
-                {/* Image header */}
-                <div style={{ width: "100%", height: 140, overflow: "hidden", position: "relative", flexShrink: 0 }}>
-                  <div style={{
-                    position: "absolute", inset: 0, zIndex: 1,
-                    background: "linear-gradient(to bottom, transparent 30%, var(--bg-surface) 100%)"
-                  }} />
-                  <img src={svc.image} alt={svc.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  <span style={{
-                    position: "absolute", top: 10, left: 10, zIndex: 2,
-                    padding: "3px 9px", borderRadius: 100, fontSize: 10, fontWeight: 700,
-                    background: svc.accent, color: "white",
-                    fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.05em",
-                  }}>
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="card !p-0 h-[700px] relative overflow-hidden bg-[#0A0D14] border-2 border-white/5 flex items-center justify-center shadow-[0_0_100px_rgba(0,0,0,0.4)]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.03)_0%,transparent_70%)]" />
+
+          <HumanBodyCanvas
+            onRegionHover={setHoveredRegion}
+            onRegionSelect={(reg) => setSelectedRegionForTriage(reg)}
+            selectedRegionId={hoveredRegion?.id || null}
+          />
+
+          <AnimatePresence>
+            {hoveredRegion && (
+              <motion.div
+                initial={{ opacity: 0, x: 50, scale: 0.9 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 50, scale: 0.9 }}
+                className="absolute top-12 right-12 z-10 w-96 bg-bg-elevated/95 border border-accent/40 p-10 rounded-[48px] shadow-3xl backdrop-blur-3xl"
+              >
+                <div className="flex items-center gap-5 mb-6">
+                  <span className="text-5xl p-4 bg-accent/10 rounded-3xl border border-accent/20 shadow-inner">{hoveredRegion.icon}</span>
+                  <div>
+                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">{hoveredRegion.label}</h3>
+                    <p className="text-[10px] uppercase font-black text-accent tracking-[0.3em] mt-2">{t("region_active")}</p>
+                  </div>
+                </div>
+                <p className="text-lg text-text-secondary font-medium leading-relaxed mb-8">{hoveredRegion.description}</p>
+                <button
+                  onClick={() => setSelectedRegionForTriage(hoveredRegion)}
+                  className="w-full btn-primary !py-5 justify-center shadow-2xl shadow-accent/20 group border-none"
+                >
+                  <span className="group-hover:scale-110 transition-transform">{t("begin_analysis")}</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Viewport HUD decoration */}
+          <div className="absolute bottom-8 left-8 p-6 bg-black/40 backdrop-blur-md rounded-[32px] border border-white/10 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-green-ok animate-ping" />
+              <span className="font-mono text-[10px] text-white uppercase font-black tracking-widest">{t("active_sensor")}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-6 pt-2">
+              <div className="space-y-1">
+                <p className="text-[8px] uppercase font-black text-text-dim">Resolution</p>
+                <p className="text-xs font-mono font-bold text-accent">8K HDR</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[8px] uppercase font-black text-text-dim">Latency</p>
+                <p className="text-xs font-mono font-bold text-accent">12ms</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 3. Health Services Matrix ── */}
+      <section className="space-y-12">
+        <div className="text-center space-y-4 max-w-3xl mx-auto px-4">
+          <h2 className="text-4xl font-black text-white tracking-tight uppercase">Specialized <span className="text-accent">Clinical Modules</span></h2>
+          <p className="text-xl text-text-secondary font-medium leading-relaxed">
+            Our diagnostic suites utilize state-of-the-art neural networks to provide accurate and personalized healthcare assistance.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {services.map((svc) => (
+            <motion.div
+              key={svc.id}
+              whileHover={{ y: -12 }}
+              onClick={() => onNavigateToTab(svc.id)}
+              className="group cursor-pointer rounded-[40px] overflow-hidden bg-bg-surface border border-white/5 hover:border-accent/40 shadow-xl transition-all duration-500"
+            >
+              <div className="h-56 relative overflow-hidden">
+                <img src={svc.image} alt={svc.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 brightness-75 group-hover:brightness-100" />
+                <div className="absolute inset-0 bg-gradient-to-t from-bg-surface via-transparent to-transparent opacity-60" />
+                <div className="absolute top-6 left-6">
+                  <span className="px-4 py-1.5 rounded-xl bg-black/60 backdrop-blur-md text-[11px] font-black text-white uppercase tracking-widest border border-white/10 shadow-xl">
                     {svc.tag}
                   </span>
                 </div>
-
-                <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                      <SvcIcon style={{ width: 16, height: 16, color: svc.accent, flexShrink: 0 }} />
-                      <h4 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 13,
-                        color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                        {svc.title}
-                      </h4>
-                    </div>
-                    <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>{svc.desc}</p>
+              </div>
+              <div className="p-8 space-y-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-bg-void border border-white/5 group-hover:border-accent/30 group-hover:bg-accent/5 transition-all duration-300 shadow-inner">
+                    <svc.icon className="w-7 h-7 text-text-secondary group-hover:text-accent group-hover:scale-110 transition-all duration-300" />
                   </div>
-
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-                    paddingTop: 10, borderTop: "1px solid var(--border)", marginTop: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: svc.accent, textTransform: "uppercase", letterSpacing: "0.06em" }}>Open</span>
-                    <ChevronRight style={{ width: 14, height: 14, color: svc.accent }} />
-                  </div>
+                  <h4 className="text-2xl font-black text-white group-hover:text-accent transition-colors tracking-tighter leading-none">{svc.title}</h4>
+                </div>
+                <p className="text-base text-text-secondary font-medium leading-relaxed">{svc.desc}</p>
+                <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-accent opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">{t("initialize_module")}</span>
+                  <ChevronRight className="w-6 h-6 text-text-dim group-hover:text-accent transition-all duration-300" />
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── 4. EMERGENCY & QUICK ACTIONS ROW ── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-2">
-          <div>
-            <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, color: "var(--text-primary)" }}>
-              Emergency & Quick Access
-            </h2>
-            <p style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 3 }}>
-              Immediate access to emergency services and hospital finder
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Emergency */}
-          <div
-            onClick={() => onNavigateToTab("emergency")}
-            style={{
-              borderRadius: 16, padding: "20px",
-              background: "var(--red-muted)", border: "1px solid var(--red-alert)",
-              cursor: "pointer", transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
-          >
-            <div style={{
-              width: 40, height: 40, borderRadius: 12, marginBottom: 14,
-              background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <Siren style={{ width: 18, height: 18, color: "var(--red-alert)" }} />
-            </div>
-            <h4 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 15, color: "var(--text-primary)", marginBottom: 6 }}>
-              Emergency Center
-            </h4>
-            <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-              Nearby hospitals map, emergency hotlines, and first aid guides.
-            </p>
-          </div>
-
-          {/* Hospital Finder */}
-          <div
-            onClick={() => onNavigateToTab("hospitals")}
-            style={{
-              borderRadius: 16, padding: "20px",
-              background: "var(--accent-muted)", border: "1px solid var(--border-accent)",
-              cursor: "pointer", transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
-          >
-            <div style={{
-              width: 40, height: 40, borderRadius: 12, marginBottom: 14,
-              background: "var(--accent-muted)", border: "1px solid var(--border-accent)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <Hospital style={{ width: 18, height: 18, color: "var(--accent)" }} />
-            </div>
-            <h4 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 15, color: "var(--text-primary)", marginBottom: 6 }}>
-              Hospital Finder
-            </h4>
-            <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-              Find cardiology, neurology, maternity & other specialist hospitals near you.
-            </p>
-          </div>
-
-          {/* 108 Direct Dial */}
-          <div style={{
-            borderRadius: 16, padding: "20px",
-            background: "var(--amber-muted)", border: "1px solid var(--amber-warn)",
-          }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 12, marginBottom: 14,
-              background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <AlertTriangle style={{ width: 18, height: 18, color: "var(--amber-warn)" }} />
-            </div>
-            <h4 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 15, color: "var(--text-primary)", marginBottom: 6 }}>
-              National Emergency: 108
-            </h4>
-            <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
-              Free government ambulance, available 24/7 across all Indian states.
-            </p>
-            <a href="tel:108" className="btn-danger" style={{ fontSize: 13, padding: "9px 18px", borderRadius: 10 }}>
-              Call 108 Now
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 5. REAL-TIME WELLNESS FEED (Live generated vitals ticker) ── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-2">
-          <div>
-            <h2 className="font-orbitron font-extrabold text-lg md:text-xl uppercase tracking-wider text-text-primary">
-              Live Patient Telemetries
-            </h2>
-            <p className="text-xs text-text-dim mt-0.5">
-              Simulated clinical readings of basic cardiorespiratory signs
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {quickStats.map((st) => (
-            <div key={st.label} className="glass-panel p-5 rounded-2xl bg-bg-surface flex items-center justify-between shadow-sm relative overflow-hidden">
-              <div className="space-y-1 text-left">
-                <span className="font-mono text-[9px] uppercase tracking-widest text-text-dim">{st.label}</span>
-                <div className="text-2xl font-orbitron font-extrabold text-text-primary">{st.value}</div>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-ok animate-ping" />
-                  <span className="text-[10px] text-green-ok font-mono uppercase font-bold">{st.status}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1 text-text-dim shrink-0">
-                <Heart className={`w-8 h-8 ${st.label.includes("Pulmonary") ? "animate-pulse text-red-alert" : "text-teal-glow opacity-30"}`} />
-              </div>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* ── 6. DISCLAIMER & PATIENT COMPLIANCE HUD ── */}
-      <div className="glass-panel p-5 rounded-2xl bg-bg-surface flex items-start gap-4 border-l-4 border-l-amber-warn text-left shadow-sm">
-        <AlertTriangle className="w-5 h-5 text-amber-warn shrink-0 mt-0.5 animate-bounce" />
-        <div className="space-y-1">
-          <h4 className="font-orbitron text-xs font-black uppercase text-text-primary tracking-wide">
-            {t("clinical_integrity_title")}
-          </h4>
-          <p className="text-xs text-text-secondary leading-relaxed font-sans">
-            {t("clinical_integrity_desc")} {t("safety_advisory_desc")}
-          </p>
+      {/* ── 4. Live Body Telemetrics ── */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {quickStats.map((st) => (
+          <div key={st.label} className="card !p-10 flex items-center justify-between !bg-bg-surface/50 border border-white/5 group hover:border-accent/30 transition-all duration-500 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <st.icon className="w-32 h-32" />
+            </div>
+            <div className="relative z-10 space-y-3">
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-text-dim">{st.label}</p>
+              <p className="text-5xl font-display font-black text-white group-hover:text-accent transition-colors tracking-tighter">{st.value}</p>
+              <div className="flex items-center gap-3">
+                <div className="w-2.5 h-2.5 rounded-full animate-ping" style={{ backgroundColor: st.color }} />
+                <span className="text-xs font-black uppercase tracking-widest text-text-secondary opacity-60 group-hover:opacity-100 transition-opacity">{t("active_sensor")}</span>
+              </div>
+            </div>
+            <div className="relative z-10 w-20 h-20 rounded-[32px] bg-bg-void flex items-center justify-center border border-white/5 shadow-2xl group-hover:scale-110 transition-all duration-500">
+              <st.icon className="w-10 h-10 opacity-60 group-hover:opacity-100 transition-all" style={{ color: st.color }} />
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* ── 5. Information & Safety Sections ── */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4">
+        <div className="card !p-10 bg-accent/5 border-accent/20 flex gap-8 items-start shadow-accent/5">
+          <div className="w-20 h-20 rounded-3xl bg-accent/10 flex items-center justify-center shrink-0 border border-accent/20 shadow-inner">
+            <Info className="w-10 h-10 text-accent" />
+          </div>
+          <div className="space-y-3">
+            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{t("how_it_works_title")}</h3>
+            <p className="text-lg text-text-secondary font-medium leading-relaxed">
+              {t("how_it_works_desc")}
+            </p>
+          </div>
         </div>
-      </div>
+
+        <div className="card !p-10 bg-amber-warn/5 border-amber-warn/20 flex gap-8 items-start shadow-amber-warn/5">
+          <div className="w-20 h-20 rounded-3xl bg-amber-warn/10 flex items-center justify-center shrink-0 border border-amber-warn/20 shadow-inner">
+            <ShieldCheck className="w-10 h-10 text-amber-warn" />
+          </div>
+          <div className="space-y-3">
+            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{t("clinical_safety_title")}</h3>
+            <p className="text-lg text-text-secondary font-medium leading-relaxed">
+              {t("clinical_safety_desc")}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 6. Emergency Reminder Banner ── */}
+      <section className="rounded-[40px] p-12 bg-red-alert/5 border border-red-alert/20 flex flex-col md:flex-row items-center justify-between gap-10 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-red-alert/5 rounded-full blur-[120px] -mr-48 -mt-48" />
+        <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+          <div className="w-24 h-24 rounded-[32px] bg-red-alert/10 flex items-center justify-center shrink-0 border border-red-alert/20 shadow-inner">
+            <AlertTriangle className="w-12 h-12 text-red-alert animate-bounce" />
+          </div>
+          <div className="space-y-3 text-center md:text-left">
+            <h4 className="text-3xl font-black text-white uppercase tracking-tighter">{t("emergency_title")}</h4>
+            <p className="text-xl text-text-secondary font-medium leading-relaxed max-w-xl">
+              {t("emergency_desc")}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => onNavigateToTab("emergency")}
+          className="relative z-10 btn-danger !py-7 !px-12 !text-xl group whitespace-nowrap border-none cursor-pointer"
+        >
+          <Siren className="w-8 h-8 group-hover:scale-110 transition-transform" />
+          <span>{t("launch_emergency_btn")}</span>
+        </button>
+      </section>
+
+      {/* ── 7. Modern Footer ── */}
+      <footer className="pt-24 pb-12 border-t border-white/5 space-y-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 px-4">
+          {/* Brand Column */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/20">
+                <Activity className="w-6 h-6 text-black" />
+              </div>
+              <span className="font-display font-black text-2xl tracking-tighter text-white">MediGuide</span>
+            </div>
+            <p className="text-text-secondary font-medium leading-relaxed">
+              {t("footer_tagline")}
+            </p>
+            <div className="flex gap-4 pt-2">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 hover:border-accent/50 hover:bg-accent/5 transition-all cursor-pointer flex items-center justify-center group">
+                  <div className="w-4 h-4 bg-text-dim group-hover:bg-accent transition-colors rounded-sm" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Nav Column */}
+          <div className="space-y-6">
+            <h5 className="text-xs font-black text-white uppercase tracking-[0.3em]">{t("action_station_title")}</h5>
+            <ul className="space-y-4 list-none p-0">
+              {services.map(s => (
+                <li key={s.id}>
+                  <button onClick={() => onNavigateToTab(s.id)} className="text-text-secondary hover:text-accent font-medium transition-colors cursor-pointer border-none bg-transparent flex items-center gap-2 group p-0">
+                    <ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    {s.title}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Quick Links Column */}
+          <div className="space-y-6">
+            <h5 className="text-xs font-black text-white uppercase tracking-[0.3em]">{t("resources")}</h5>
+            <ul className="space-y-4 list-none p-0">
+              {[
+                { key: 'safety_center', label: t('safety_center') },
+                { key: 'clinical_doc', label: t('clinical_doc') },
+                { key: 'data_privacy', label: t('data_privacy') },
+                { key: 'terms_of_use', label: t('terms_of_use') },
+                { key: 'accessibility', label: t('accessibility') }
+              ].map(link => (
+                <li key={link.key}>
+                  <button className="text-text-secondary hover:text-accent font-medium transition-colors cursor-pointer border-none bg-transparent flex items-center gap-2 group p-0">
+                    <ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    {link.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Support Column */}
+          <div className="space-y-6">
+            <h5 className="text-xs font-black text-white uppercase tracking-[0.3em]">{t("system_health_title")}</h5>
+            <div className="card !p-6 bg-green-ok/5 border-green-ok/20 space-y-4 shadow-none">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-green-ok">{t("all_systems_go")}</span>
+                <div className="w-2 h-2 rounded-full bg-green-ok animate-pulse" />
+              </div>
+              <p className="text-[11px] text-text-secondary leading-relaxed font-bold">
+                {t("system_latency_desc")}
+              </p>
+            </div>
+            <div className="flex items-center gap-4 text-xs font-black text-text-dim uppercase tracking-widest">
+              <Clock className="w-4 h-4" />
+              <span>{t("updated_ago")}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 px-4">
+          <p className="text-xs text-text-dim font-bold uppercase tracking-widest">
+            {t("copyright")}
+          </p>
+          <div className="flex items-center gap-8 text-[10px] font-black text-text-dim uppercase tracking-[0.2em]">
+            <span className="flex items-center gap-2">
+              <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+              {t("gdpr_compliant")}
+            </span>
+            <span className="flex items-center gap-2">
+              <Lock className="w-3.5 h-3.5 text-accent" />
+              {t("aes_encryption")}
+            </span>
+          </div>
+        </div>
+      </footer>
 
       {/* Central Dialog for Region Triage */}
       <AnimatePresence>
@@ -447,101 +447,81 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-bg-void/90 backdrop-blur-xl"
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.9, y: 40 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 350 }}
-              className="w-full max-w-lg bg-bg-glass border border-teal-glow/25 rounded-2xl p-6 shadow-2xl relative overflow-hidden"
+              exit={{ scale: 0.9, y: 40 }}
+              className="w-full max-w-2xl bg-bg-surface border-2 border-white/10 rounded-[60px] p-16 shadow-[0_0_150px_rgba(0,0,0,0.6)] relative overflow-hidden"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-teal-glow/10 to-transparent rounded-tr-xl pointer-events-none" />
-              
+              <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-[80px] -mr-32 -mt-32" />
+
               <button
                 onClick={() => setSelectedRegionForTriage(null)}
-                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-black/5 text-text-secondary transition-colors cursor-pointer border-0 bg-transparent"
+                className="absolute top-12 right-12 p-4 rounded-3xl hover:bg-white/5 text-text-dim hover:text-white transition-all cursor-pointer border-none bg-transparent"
               >
-                <X className="w-5 h-5" />
+                <X className="w-8 h-8" />
               </button>
 
-              <div className="flex items-center gap-3.5 mb-4 border-b border-border-dim/30 pb-4 text-left">
-                <span className="text-3xl p-2 bg-teal-glow/10 rounded-xl inline-block">{selectedRegionForTriage.icon}</span>
-                <div>
-                  <h3 className="font-orbitron font-extrabold text-lg text-text-primary uppercase tracking-wide">
-                    {selectedRegionForTriage.label}
-                  </h3>
-                  <p className="text-[10px] font-mono uppercase text-teal-glow/85 tracking-widest">Body Area Selected</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 text-left">
-                <div>
-                  <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider mb-1 font-mono">Area Description / వివరాలు:</p>
-                  <p className="text-xs text-text-primary leading-relaxed bg-bg-void/70 p-3 rounded-xl border border-border-dim/30">
-                    {selectedRegionForTriage.description}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] font-semibold text-text-dim uppercase tracking-wider mb-1.5 font-mono">Indexed Symptom Profile / లక్షణాలు:</p>
-                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
-                    {selectedRegionForTriage.symptoms.map((symptom, idx) => (
-                      <span
-                        key={idx}
-                        className="text-[10px] bg-teal-glow/5 border border-border-dim hover:border-teal-glow/30 text-text-primary font-medium px-2.5 py-1 rounded-md transition-colors duration-200"
-                      >
-                        • {symptom}
-                      </span>
-                    ))}
+              <div className="flex flex-col gap-10 relative z-10">
+                <div className="flex items-center gap-8">
+                  <div className="text-7xl w-32 h-32 bg-accent/10 rounded-[48px] flex items-center justify-center border border-accent/20 shadow-inner">
+                    {selectedRegionForTriage.icon}
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-5xl font-black text-white uppercase tracking-tighter">
+                      {selectedRegionForTriage.label}
+                    </h3>
+                    <p className="text-xs uppercase font-black text-accent tracking-[0.4em]">{t("region_active")}</p>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-border-dim/30 text-center text-xs font-sans text-text-secondary italic">
-                  Would you like to check symptoms for this body part? / ఈ భాగం యొక్క లక్షణాలను తనిఖీ చేయాలా?
-                </div>
+                <div className="space-y-8">
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-black text-text-dim uppercase tracking-[0.3em]">Clinical Description</p>
+                    <p className="text-xl text-text-secondary font-medium leading-relaxed">
+                      {selectedRegionForTriage.description}
+                    </p>
+                  </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <button
-                    onClick={() => {
-                      onStartTriage(selectedRegionForTriage);
-                      setSelectedRegionForTriage(null);
-                    }}
-                    className="w-full py-3 rounded-xl bg-teal-glow hover:bg-teal-mid text-white font-orbitron font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer border-0"
-                  >
-                    <ShieldAlert className="w-3.5 h-3.5" />
-                    Check Symptoms
-                  </button>
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black text-text-dim uppercase tracking-[0.3em]">Indexed Indications</p>
+                    <div className="flex flex-wrap gap-3">
+                      {selectedRegionForTriage.symptoms.map((s, idx) => (
+                        <span
+                          key={idx}
+                          className="text-sm bg-bg-void border border-white/10 text-white font-black px-6 py-2.5 rounded-2xl shadow-xl"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
 
-                  <button
-                    onClick={() => {
-                      onNavigateToTab("voice");
-                      setSelectedRegionForTriage(null);
-                    }}
-                    className="w-full py-3 rounded-xl bg-blue-electric hover:bg-blue-600 text-white font-orbitron font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer border-0"
-                  >
-                    <Speech className="w-3.5 h-3.5 animate-pulse" />
-                    Speak Symptoms
-                  </button>
-                </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-10 border-t border-white/10">
+                    <button
+                      onClick={() => {
+                        onStartTriage(selectedRegionForTriage);
+                        setSelectedRegionForTriage(null);
+                      }}
+                      className="btn-primary !py-7 !text-xl shadow-2xl shadow-accent/20 border-none cursor-pointer"
+                    >
+                      <ShieldAlert className="w-6 h-6" />
+                      Run Clinical Audit
+                    </button>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      onNavigateToTab("fact");
-                      setSelectedRegionForTriage(null);
-                    }}
-                    className="flex-1 py-2 rounded-lg bg-transparent border border-green-ok/30 hover:bg-green-ok/5 text-green-ok font-orbitron font-medium text-[10px] uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <HelpCircle className="w-3.5 h-3.5" />
-                    Verify Health Claims
-                  </button>
-                  <button
-                    onClick={() => setSelectedRegionForTriage(null)}
-                    className="px-4 py-2 rounded-lg bg-bg-surface hover:bg-bg-void border border-border-dim text-text-primary font-orbitron font-medium text-[10px] uppercase tracking-wider transition-all cursor-pointer"
-                  >
-                    Cancel / రద్దు చేయి
-                  </button>
+                    <button
+                      onClick={() => {
+                        onNavigateToTab("voice");
+                        setSelectedRegionForTriage(null);
+                      }}
+                      className="btn-secondary !py-7 !text-xl !bg-bg-void flex items-center justify-center gap-4 border-none cursor-pointer"
+                    >
+                      <Speech className="w-6 h-6 animate-pulse" />
+                      Vocal Intake
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>

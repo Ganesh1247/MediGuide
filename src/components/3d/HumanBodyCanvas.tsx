@@ -205,10 +205,10 @@ export default function HumanBodyCanvas({
 
     // Direct realistic clinical humanoid dimensions spec
     const isMale = gender === "male";
-    
+
     // Proportional dimensions for realistic human curves
     const shouldersX = isMale ? 0.44 : 0.35;
-    const bodyScaleX = isMale ? 1.14 : 0.88; 
+    const bodyScaleX = isMale ? 1.14 : 0.88;
     const pelvisScaleX = isMale ? 0.98 : 1.15;
     const neckScaleY = isMale ? 1.0 : 0.88;
     const neckScaleX = isMale ? 1.0 : 0.80;
@@ -225,7 +225,7 @@ export default function HumanBodyCanvas({
       { id: "chest", name: "thorax_body", geom: new THREE.CylinderGeometry(0.34, 0.25, 0.60, 24), pos: [0, 1.20, 0], scale: [bodyScaleX, 1.0, 0.94] },
       { id: "chest", name: "deltoid_l", geom: new THREE.SphereGeometry(0.11, 18, 18), pos: [-shouldersX, 1.35, -0.01], scale: [limbScale, limbScale, limbScale] },
       { id: "chest", name: "deltoid_r", geom: new THREE.SphereGeometry(0.11, 18, 18), pos: [shouldersX, 1.35, -0.01], scale: [limbScale, limbScale, limbScale] },
-      
+
       // Dynamic chest contours for gender structures
       ...(isMale ? [
         { id: "chest", name: "pec_l", geom: new THREE.BoxGeometry(0.15, 0.13, 0.07), pos: [-0.11, 1.26, 0.14], rot: [0.1, 0, 0] },
@@ -238,7 +238,7 @@ export default function HumanBodyCanvas({
       { id: "chest", name: "chest_rib_1", geom: new THREE.TorusGeometry(0.31, 0.01, 10, 48), pos: [0, 1.34, 0], rot: [Math.PI / 2, 0, 0], scale: [bodyScaleX, 1.0, 1.0], isDecor: true },
       { id: "chest", name: "chest_rib_2", geom: new THREE.TorusGeometry(0.30, 0.01, 10, 48), pos: [0, 1.20, 0], rot: [Math.PI / 2, 0, 0], scale: [bodyScaleX, 1.0, 1.0], isDecor: true },
       { id: "chest", name: "chest_rib_3", geom: new THREE.TorusGeometry(0.27, 0.01, 10, 48), pos: [0, 1.06, 0], rot: [Math.PI / 2, 0, 0], scale: [bodyScaleX, 1.0, 1.0], isDecor: true },
-      
+
       // Inside active organs
       { id: "chest", name: "heart_core", geom: new THREE.SphereGeometry(0.08, 20, 20), pos: [-0.05, 1.25, 0.08], isOrgan: true, organType: "heart" },
       { id: "chest", name: "lung_l_core", geom: new THREE.CylinderGeometry(0.065, 0.05, 0.26, 16), pos: [-0.13, 1.22, 0.03], rot: [0.08, 0, 0.10], isOrgan: true, organType: "lung_l" },
@@ -365,7 +365,7 @@ export default function HumanBodyCanvas({
       anatomySegments.forEach((seg) => {
         // Find region matching this mesh id
         const region = BODY_REGIONS.find((r) => r.id === seg.id)!;
-        
+
         let meshMaterial: THREE.Material;
 
         // Custom assignment for internal organs vs standard glass structural parts
@@ -397,13 +397,13 @@ export default function HumanBodyCanvas({
         }
 
         mesh.name = seg.name;
-        mesh.userData = { 
-          regionId: seg.id, 
+        mesh.userData = {
+          regionId: seg.id,
           isOrgan: "isOrgan" in seg,
           organType: "isOrgan" in seg ? seg.organType : null,
           isDecor: "isDecor" in seg
         };
-        
+
         bodyGroup.add(mesh);
 
         // Keep core structure parts in interactive array so they capture clicks/raycasts
@@ -443,7 +443,7 @@ export default function HumanBodyCanvas({
     scene.add(backSpecLight);
 
     const medicalRimLight = new THREE.PointLight(0x0891b2, 1.5, 8);
-    medicalRimLight.position.set(0, 1,-1.5);
+    medicalRimLight.position.set(0, 1, -1.5);
     scene.add(medicalRimLight);
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
@@ -752,28 +752,26 @@ export default function HumanBodyCanvas({
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 p-1 bg-white/70 backdrop-blur-[6px] border border-neutral-200/50 rounded-xl shadow-sm">
         <button
           onClick={() => setGender("male")}
-          className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${
-            gender === "male"
+          className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${gender === "male"
               ? "bg-teal-glow text-white shadow-[0_2px_8px_rgba(8,145,178,0.25)]"
               : "text-text-secondary hover:bg-black/5"
-          }`}
+            }`}
         >
           <span>👨</span> Male
         </button>
         <button
           onClick={() => setGender("female")}
-          className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${
-            gender === "female"
+          className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${gender === "female"
               ? "bg-teal-glow text-white shadow-[0_2px_8px_rgba(8,145,178,0.25)]"
               : "text-text-secondary hover:bg-black/5"
-          }`}
+            }`}
         >
           <span>👩</span> Female
         </button>
       </div>
 
-      <div 
-        ref={mountRef} 
+      <div
+        ref={mountRef}
         id="body-canvas-container"
         className="w-full h-full min-h-[480px] max-h-[550px] select-none touch-none"
       />

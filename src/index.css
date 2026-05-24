@@ -53,6 +53,49 @@ body.light {
   --border-strong:  rgba(15, 23, 42, 0.18);
 }
 
+body.light .bg-mesh-glow {
+  background:
+    radial-gradient(circle at 10% 20%, rgba(8, 145, 178, 0.12) 0%, transparent 42%),
+    radial-gradient(circle at 90% 80%, rgba(56, 189, 248, 0.12) 0%, transparent 42%),
+    radial-gradient(circle at 50% 50%, rgba(248, 250, 252, 1) 0%, var(--bg-void) 100%);
+}
+
+body.light .nav-blur {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+body.light .card {
+  background: #fff;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+body.light .btn-primary {
+  background: var(--accent);
+  color: #000 !important;
+}
+
+body.light .btn-danger {
+  background: var(--red-alert);
+  color: #fff !important;
+}
+
+body.light .input,
+body.light .language-select {
+  color: var(--text-primary);
+}
+
+.language-select,
+.language-select option {
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+
+.language-select {
+  padding-right: 1.85rem;
+}
+
 @theme {
   --font-sans:     "Inter", sans-serif;
   --font-display:  "Plus Jakarta Sans", sans-serif;
@@ -104,11 +147,23 @@ body {
 .animate-glow { animation: pulse-glow 2s infinite ease-in-out; }
 
 /* ─── COMPONENTS ────────────────────────────────────────────── */
+.hero-bg-img {
+  transition: transform 1.5s ease, filter 1.5s ease;
+}
+
+.hero-image-mask {
+  background: rgba(0, 0, 0, 0.24);
+}
+
+body.light .hero-image-mask {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 28px;
-  padding: 24px;
+  border-radius: 24px;
+  padding: 18px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -122,17 +177,17 @@ body {
   background: var(--accent);
   color: #000 !important;
   font-weight: 800;
-  padding: 12px 28px;
-  border-radius: 18px;
+  padding: 10px 22px;
+  border-radius: 16px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
   border: none;
   font-family: var(--font-display);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 13px;
+  font-size: 12px;
   transition: all 0.25s ease;
 }
 
@@ -146,17 +201,17 @@ body {
   background: var(--red-alert);
   color: #fff !important;
   font-weight: 800;
-  padding: 12px 28px;
-  border-radius: 18px;
+  padding: 10px 22px;
+  border-radius: 16px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
   border: none;
   font-family: var(--font-display);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 13px;
+  font-size: 12px;
   transition: all 0.25s ease;
   box-shadow: 0 8px 20px rgba(255, 77, 77, 0.25);
 }

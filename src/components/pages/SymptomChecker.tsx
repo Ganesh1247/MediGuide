@@ -3,7 +3,7 @@ import HumanBodyCanvas, { BODY_REGIONS } from "../3d/HumanBodyCanvas";
 import { BodyRegion, SymptomAnalysisResult } from "../../types";
 import { ShieldCheck, Loader2, Sparkles, AlertTriangle, ArrowRight, UserCheck, Stethoscope, RefreshCw, X, ChevronRight } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SymptomCheckerProps {
   initialRegion?: BodyRegion | null;

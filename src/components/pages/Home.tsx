@@ -182,10 +182,13 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
             <h3 className="text-lg font-black text-white tracking-tight">Touch a body region to begin a guided triage.</h3>
             <p className="text-sm text-text-secondary leading-relaxed mt-2">Instant help from MediGuide with one tap, no more accidental hover states on mobile.</p>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-3 text-xs uppercase font-black tracking-[0.25em] text-accent shadow-accent/10">
+          <button
+            onClick={() => onStartTriage(activeTouchedRegion || undefined)}
+            className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-3 text-xs uppercase font-black tracking-[0.25em] text-accent shadow-accent/10 hover:bg-accent/15 transition-all cursor-pointer"
+          >
             <span>Tap & explore</span>
             <ArrowRight className="w-4 h-4" />
-          </div>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(520px,1fr)_280px] gap-6 px-4">

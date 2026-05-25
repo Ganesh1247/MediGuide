@@ -294,6 +294,46 @@ app.get(apiRoute("/health"), (req, res) => {
   res.json({ status: "healthy", timestamp: new Date().toISOString() });
 });
 
+const GEMINI_MODEL_CANDIDATES = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+];
+
+async function generateWithModelFallback(payload: {
+  model?: string;
+  contents: any;
+  config?: any;
+}) {
+  const requestedModel = payload.model;
+  const candidates = requestedModel
+    ? [requestedModel, ...GEMINI_MODEL_CANDIDATES.filter((m) => m !== requestedModel)]
+    : GEMINI_MODEL_CANDIDATES;
+
+  let lastError: any;
+  for (const model of candidates) {
+    try {
+      return await ai.models.generateContent({
+        ...payload,
+        model,
+      });
+    } catch (err: any) {
+      const msg = String(err?.message || err || "").toLowerCase();
+      const shouldTryNext =
+        msg.includes("not found") ||
+        msg.includes("is not supported") ||
+        msg.includes("unsupported");
+      if (!shouldTryNext) {
+        throw err;
+      }
+      lastError = err;
+      console.warn(`[Gemini] Model ${model} unavailable; trying next candidate.`);
+    }
+  }
+
+  throw lastError || new Error("No compatible Gemini model available.");
+}
+
 // Endpoint 2: Analyze Symptoms via Gemini (Standard Triage)
 app.post(apiRoute("/analyze-symptoms"), async (req, res) => {
   try {
@@ -320,8 +360,8 @@ Evaluate these inputs and identify:
 3. Simple, non-medicative helpful actions/tips (e.g., safe resting alignments, hydration, ice packs). Do not prescribe drugs.
 4. Appropriate clinical specialties the user should consult.`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+    const response = await generateWithModelFallback({
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         systemInstruction: `You are a highly precise, board-certified emergency medicine triage bot. Your task is to analyze patient-submitted symptoms and estimate triage likelihoods. Since you are an advisory tool, always separate conditions into potential matches with confidence values, designate potential immediate emergencies of high danger correctly, and recommend real physical clinical doctor consultations.
@@ -410,8 +450,8 @@ app.post(apiRoute("/identify-medicine"), async (req, res) => {
       return res.status(400).json({ error: "Please provide either scanned text representation or base64 image data." });
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+    const response = await generateWithModelFallback({
+      model: "gemini-2.5-flash",
       contents: contents,
       config: {
         systemInstruction: `You are a professional clinical drug information verification system. You translate scanned pill strips, labels or text searches into accurate chemical formulations, side effects, precautions, CDSCO status flags and safe dosage outlines.
@@ -463,8 +503,8 @@ app.post(apiRoute("/voice-input"), async (req, res) => {
       return res.status(400).json({ error: "Transcript data is required for mapping." });
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+    const response = await generateWithModelFallback({
+      model: "gemini-2.5-flash",
       contents: `Translate the following colloquial patient description: "${transcript}" into formal medical terminologies, specific anatomical region candidates, and extract concrete listed symptoms that are active.
 CRITICAL: Translate all output fields (mappedTerm background, detected symptoms list) completely into this language: ${language || "English"}.`,
       config: {
@@ -513,8 +553,8 @@ app.post(apiRoute("/fact-check"), async (req, res) => {
       return res.json(fallback);
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+    const response = await generateWithModelFallback({
+      model: "gemini-2.5-flash",
       contents: `Fact-check this medical claim, myth, or question thoroughly: "${claim}". 
 Provide a clear, clinical, objective scientific breakdown. 
 Target response language: ${language || "English"}.`,
@@ -625,8 +665,8 @@ Adhere strictly to these clinical rules:
 4. Provide safe, non-medicative physical recovery recommendations (such as relative rest, hydration, standard first aid) unless describing specific medicines explicitly asked about.
 5. Absolute emergency cases (chest pain, stroke, breathing crises, severe blood loss) must trigger a high-contrast emergency warning immediately.`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+    const response = await generateWithModelFallback({
+      model: "gemini-2.5-flash",
       contents: contents,
       config: {
         systemInstruction,

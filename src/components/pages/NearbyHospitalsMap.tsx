@@ -213,9 +213,9 @@ export default function NearbyHospitalsMap() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start min-h-[700px]">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start xl:h-[calc(100vh-12rem)]">
         {/* ── Map ── */}
-        <div className="xl:col-span-8 card !p-0 overflow-hidden relative border-2 border-white/5 rounded-[40px] shadow-2xl group min-h-[750px] bg-bg-void sticky top-28">
+        <div className="xl:col-span-8 card !p-0 overflow-hidden relative border-2 border-white/5 rounded-[40px] shadow-2xl group min-h-[420px] h-[58vh] xl:h-[calc(100vh-12rem)] bg-bg-void xl:sticky xl:top-28">
           <div ref={mapContainerRef} className="absolute inset-0 z-0 grayscale-[0.5] contrast-[1.1] group-hover:grayscale-0 transition-all duration-700" />
           <AnimatePresence>
             {loading && (
@@ -235,32 +235,31 @@ export default function NearbyHospitalsMap() {
         </div>
 
         {/* ── Sidebar ── */}
-        <div className="xl:col-span-4 flex flex-col gap-6 overflow-hidden">
-          <div className="card !p-8 space-y-6 !bg-bg-elevated/30 border-2 border-white/5 rounded-[40px]">
-            <div className="relative">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-text-dim" />
-              <input
-                type="text"
-                placeholder={t("searching_results")}
-                className="input !h-16 !pl-16 !text-lg !rounded-3xl"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+        <div className="xl:col-span-4 flex flex-col gap-6 overflow-hidden xl:h-[calc(100vh-12rem)]">
+          <div className="space-y-4 xl:overflow-y-auto xl:pr-2 xl:flex-1">
+            <div className="card !p-8 space-y-6 !bg-bg-elevated/30 border-2 border-white/5 rounded-[40px]">
+              <div className="relative">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-text-dim" />
+                <input
+                  type="text"
+                  placeholder={t("searching_results")}
+                  className="input !h-16 !pl-16 !text-lg !rounded-3xl"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-3">
+                {RADIUS_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setRadius(opt.value)}
+                    className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border-none cursor-pointer ${radius === opt.value ? "bg-accent text-black shadow-xl shadow-accent/20" : "bg-bg-void text-text-secondary hover:text-white"}`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-3">
-              {RADIUS_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setRadius(opt.value)}
-                  className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border-none cursor-pointer ${radius === opt.value ? "bg-accent text-black shadow-xl shadow-accent/20" : "bg-bg-void text-text-secondary hover:text-white"}`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-4">
             <AnimatePresence mode="popLayout">
               {filtered.map((h, i) => (
                 <motion.div

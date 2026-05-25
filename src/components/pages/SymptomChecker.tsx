@@ -108,7 +108,7 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
             </div>
 
             <div className="p-4 sm:p-8 bg-bg-elevated/40 border-t border-border relative z-10">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
                 {BODY_REGIONS.map(r => (
                   <button
                     key={r.id}
@@ -219,12 +219,12 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
                     <p className="text-xs font-black uppercase tracking-widest text-text-secondary flex items-center gap-3">
                       <span className="w-8 h-[2px] bg-accent" /> 3. Duration
                     </p>
-                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                       {durationChips.map((chip) => (
                         <button
                           key={chip}
                           onClick={() => setDuration(chip)}
-                          className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all border cursor-pointer ${
+                          className={`w-full px-4 py-2 rounded-xl text-xs font-black uppercase transition-all border cursor-pointer ${
                             duration === chip ? "bg-blue border-blue text-white shadow-lg shadow-blue/20" : "bg-bg-void/60 border-border text-text-secondary hover:border-blue/40"
                           }`}
                         >

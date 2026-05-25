@@ -17,6 +17,8 @@ console.log(`[MediGuide] Loaded environment file: ${envPath}`);
 const app = express();
 app.use(express.json({ limit: "15mb" }));
 
+const apiRoute = (path: string) => [`/api${path}`, path];
+
 const DEFAULT_PORT = Number(process.env.PORT) || 8080;
 const MAX_PORT_RETRIES = 10;
 
@@ -288,12 +290,12 @@ function getVoiceInputFallback(transcript: string) {
 }
 
 // Endpoint 1: Health / Verification
-app.get("/api/health", (req, res) => {
+app.get(apiRoute("/health"), (req, res) => {
   res.json({ status: "healthy", timestamp: new Date().toISOString() });
 });
 
 // Endpoint 2: Analyze Symptoms via Gemini (Standard Triage)
-app.post("/api/analyze-symptoms", async (req, res) => {
+app.post(apiRoute("/analyze-symptoms"), async (req, res) => {
   try {
     const { region, symptoms, severity, duration, customSymptom, language } = req.body;
 
@@ -381,7 +383,7 @@ CRITICAL: You must write and output ALL text fields, strings, names, explanation
 });
 
 // Endpoint 3: Scan Medicine Label / OCR Identification
-app.post("/api/identify-medicine", async (req, res) => {
+app.post(apiRoute("/identify-medicine"), async (req, res) => {
   try {
     const { text, image, language } = req.body;
 
@@ -454,7 +456,7 @@ CRITICAL: You must write and translate all text values, medicine description, si
 });
 
 // Endpoint 4: Voice Input Mapping to Symptoms & Regions
-app.post("/api/voice-input", async (req, res) => {
+app.post(apiRoute("/voice-input"), async (req, res) => {
   try {
     const { transcript, language } = req.body;
     if (!transcript) {
@@ -497,7 +499,7 @@ CRITICAL: Translate all output fields (mappedTerm background, detected symptoms 
 });
 
 // Endpoint 5: Fact Check Medical Claims with Search Grounding
-app.post("/api/fact-check", async (req, res) => {
+app.post(apiRoute("/fact-check"), async (req, res) => {
   const { claim, language } = req.body;
   if (!claim) {
     return res.status(400).json({ error: "Medical claim or assertion text is required." });
@@ -541,7 +543,7 @@ Translate all fields into the requested language: ${language || "English"}.`,
   }
 });
 
-app.post("/api/translate", (req, res) => {
+app.post(apiRoute("/translate"), (req, res) => {
   const { lang } = req.body;
   if (!lang || !translations[lang]) {
     return res.status(400).json({ error: "Unsupported language" });
@@ -600,7 +602,7 @@ Is there a specific symptom, medication query, or first-aid practice you would l
 }
 
 // Endpoint 6: Real-time AI Assistant Chat
-app.post("/api/assistant/chat", async (req, res) => {
+app.post(apiRoute("/assistant/chat"), async (req, res) => {
   try {
     const { messages, language } = req.body;
     if (!messages || !Array.isArray(messages)) {
@@ -695,6 +697,10 @@ async function startListening(startPort: number, retries = 0): Promise<void> {
   });
 }
 
-startApp().catch((err) => {
-  console.error("Server startup failure:", err);
-});
+export default app;
+
+if (process.env.VERCEL !== "1") {
+  startApp().catch((err) => {
+    console.error("Server startup failure:", err);
+  });
+}

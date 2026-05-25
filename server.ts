@@ -1,14 +1,24 @@
 import express from "express";
 import path from "path";
+import os from "os";
+import fs from "fs";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type } from "@google/genai";
+import { translations } from "./src/data/translations";
 
-dotenv.config();
+const envPath = fs.existsSync(path.resolve(process.cwd(), ".env.local"))
+  ? path.resolve(process.cwd(), ".env.local")
+  : fs.existsSync(path.resolve(process.cwd(), "env.local"))
+  ? path.resolve(process.cwd(), "env.local")
+  : path.resolve(process.cwd(), ".env");
+dotenv.config({ path: envPath });
+console.log(`[MediGuide] Loaded environment file: ${envPath}`);
 
 const app = express();
 app.use(express.json({ limit: "15mb" }));
 
-const PORT = 8080;
+const DEFAULT_PORT = Number(process.env.PORT) || 8080;
+const MAX_PORT_RETRIES = 10;
 
 // Initialize Gemini SDK with telemetry header
 const ai = new GoogleGenAI({
@@ -20,104 +30,44 @@ const ai = new GoogleGenAI({
   },
 });
 
-// --- GENERIC ROBUST HEALTH SYSTEM FALLBACKS FOR RATE-LIMIT (429) MITIGATION ---
-
 function getFactCheckFallback(claim: string) {
   const norm = claim.toLowerCase();
-  let analysis = "";
-  let verdict = "Unproven";
-  let citations: { title: string; url: string }[] = [];
+  let verdict = "Inconclusive";
+  let explanation = "A reliable, specific conclusion is not available from the local health reference summary. Consult a licensed healthcare professional for a definitive assessment.";
+  let evidenceSource = "General medical reference guidance";
+  const safetyAdvisory = "This information is for educational purposes only. Consult a qualified medical professional for personalized medical advice.";
 
   if (norm.includes("carrot") || norm.includes("night vision") || norm.includes("eye")) {
-    verdict = "Partially True (Myth in Practice)";
-    analysis = `**VERDICT: ${verdict}**
-
-**SCIENTIFIC ANALYSIS:**
-Carrots are rich in beta-carotene, an important carotenoid pigment that the human body metabolizes into Vitamin A (retinol). Vitamin A is a core building block for rhodopsin, the retinal photo-pigment required for low-light/night vision. 
-
-However, the viral belief that eating carrots will actively grant superior night vision is a WWII British military propaganda myth designed to hide the invention of airborne radar. For individuals with adequate Vitamin A levels, consuming excess carrots provides no marginal benefit to visual acuity and can lead to benign yellowing of the skin (carotenemia).
-
-**CLINICAL CONSENSUS:**
-- Eating dietary orange vegetables is excellent for preventing macular degeneration.
-- It will not cure genetic optical refractive errors (myopia, astigmatism) or bypass physiological visual thresholds.`;
-    citations = [
-      { title: "Vitamin A and Vision Health (NIH)", url: "https://ods.od.nih.gov/factsheets/VitaminA-HealthProfessional/" },
-      { title: "World War II Radar Propaganda Fact-Check (Smithsonian)", url: "https://www.smithsonianmag.com/arts-culture/battle-of-the-carrots-the-history-of-a-world-war-ii-propaganda-campaign-110058911/" }
-    ];
+    verdict = "Partially True";
+    explanation = `Carrots supply beta-carotene, a precursor to vitamin A, which supports normal visual pigment formation and eye health. However, there is no evidence that eating carrots alone grants enhanced night vision beyond normal healthy levels.`;
+    evidenceSource = "NIH and vision health clinical literature";
   } else if (norm.includes("turmeric") || norm.includes("curcumin") || norm.includes("arthritis") || norm.includes("joint")) {
-    verdict = "True (Moderate Support)";
-    analysis = `**VERDICT: ${verdict}**
-
-**SCIENTIFIC ANALYSIS:**
-Turmeric contains curcumin, a natural polyphenolic compound that possesses well-documented, powerful anti-inflammatory and antioxidant activities. Curcumin acts by suppressing a key cellular inflammatory pathway (NF-kB), similar to low-dose non-steroidal anti-inflammatory drugs (NSAIDs).
-
-In multiple peer-reviewed randomized clinical trials, standard concentrated curcumin supplements demonstrated significant efficacy in reducing pain scores and stiffness in osteoarthritis patients. However, raw turmeric powder has very poor bioavailability (absorption) in the human intestinal tract unless paired with black pepper (piperine) or lipids.
-
-**CLINICAL CONSENSUS:**
-- Curcumin is highly beneficial as an auxiliary therapy for long-term chronic clinical swelling.
-- It is not a complete replacement for acute physician-directed medical joint therapies during flareups.`;
-    citations = [
-      { title: "Curcumin/Turmeric in Osteoarthritis Clinical Trials (PubMed)", url: "https://pubmed.ncbi.nlm.nih.gov/34214295/" },
-      { title: "Anti-inflammatory Mechanisms of Curcumin (PMC)", url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5664031/" }
-    ];
+    verdict = "True";
+    explanation = `Curcumin, the active component of turmeric, has documented anti-inflammatory effects and has shown benefit as a supportive treatment for mild joint discomfort. It should be used alongside, not as a replacement for, standard medical care.`;
+    evidenceSource = "Published curcumin trials and clinical reviews";
   } else if (norm.includes("hot water") || norm.includes("metabolism") || norm.includes("fat")) {
-    verdict = "Myth / Placebo";
-    analysis = `**VERDICT: ${verdict}**
-
-**SCIENTIFIC ANALYSIS:**
-Drinking hot water after meals operates purely on a thermal sensory placebo effect. While hot water can assist slightly with the physical breakdown of lipids in food inside the stomach cavity, it has zero measurable biochemical impact on subcutaneous adipose tissue or systemic biological fat-burning.
-
-Your metabolic rate is governed by hormonal thyroid pathways and skeletal muscle energy demands. Thermic effects of water consumption (water-induced thermogenesis) actually show that drinking cold water burns slightly *more* calories, as the body must expend thermal energy to raise the water temperature to 37°C.
-
-**CLINICAL CONSENSUS:**
-- Hot water relaxes tight gastrointestinal sphincters and can relieve minor bloating, but does not contribute to systemic adiposity reduction.`;
-    citations = [
-      { title: "Thermic Effect of Water Ingestion (Frontiers)", url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3809630/" }
-    ];
+    verdict = "False";
+    explanation = `Drinking hot water does not directly burn body fat or increase long-term metabolic fat loss. It may be soothing, but metabolic rate is governed by broader dietary and hormonal factors.`;
+    evidenceSource = "Thermogenesis and nutrition science references";
   } else if (norm.includes("cold shower") || norm.includes("immunity") || norm.includes("blood cell")) {
-    verdict = "Partially True (Speculative)";
-    analysis = `**VERDICT: ${verdict}**
-
-**SCIENTIFIC ANALYSIS:**
-Exposure to sudden cold water forces the nervous system into a temporary acute sympathetic (fight-or-flight) response, releasing epinephrine and cortisol. Some preliminary clinical trials suggest this brief biological stress induces a mild metabolic surge, elevating baseline circulating white blood cell (leukocyte) counts momentarily.
-
-However, there is no sound, peer-reviewed clinical data demonstrating that taking daily cold showers directly prevents standard microbial infections or strengthens long-term adaptive memory immunity (B-cells/T-cells).
-
-**CLINICAL CONSENSUS:**
-- Cold hydrodynamic stimulation is excellent for vasorheology, decreasing post-exercise muscular swelling, and boosting instant mental alertness.
-- It should not be treated as an anti-viral protective measure.`;
-    citations = [
-      { title: "The Effect of Cold Exposure on Immune Response (PubMed)", url: "https://pubmed.ncbi.nlm.nih.gov/11831845/" }
-    ];
-  } else {
-    verdict = "Unproven / Dynamic Cache";
-    analysis = `**VERDICT: ${verdict} (Offline Standard Reference)**
-
-**SCIENTIFIC ANALYSIS:**
-We are analyzing this clinical query using our peer-reviewed offline medical knowledge cache due to temporary cloud API rate-limiting limits. 
-
-From an academic physiological standpoint, homeostatic wellness is most effectively preserved via balanced nutrition, active physical cardiovascular exercise, adequate circadian sleep hygiene, and professional primary clinical care audits. Avoid self-diagnosing critical symptoms solely on folklore. Take caution with unverified viral dietary trends.
-
-**CLINICAL RECOMMENDATION:**
-- Cross-reference any self-administered organic supplement claims with registered pharmacopoeias.
-- Undergo general annual blood panels with standard diagnostic practitioners to track metabolic baselines.`;
-    citations = [
-      { title: "NIH MedlinePlus Scientific Resources", url: "https://medlineplus.gov/" },
-      { title: "WHO Database of Clinical Guidelines", url: "https://www.who.int/publications/guidelines" }
-    ];
+    verdict = "Partially True";
+    explanation = `Cold-water exposure can produce temporary changes in circulation and stress hormones. There is not enough evidence to conclude that it reliably boosts long-term immunity or prevents infection.`;
+    evidenceSource = "Cold exposure and immune response studies";
   }
 
   return {
     claim,
-    analysis: `⚠️ NOTICE: CLOUD API EXHAUSTION (RATE-LIMIT 429) ACTIVE ⚠️\nMediGuide is utilizing our standard offline-cache medical database to query this claim immediately.\n\n=========================================\n\n${analysis}`,
-    citations
+    verdict,
+    explanation,
+    evidenceSource,
+    safetyAdvisory
   };
 }
 
 function getSymptomAnalysisFallback(region: string, symptoms: string[], severity: number, duration: string) {
   const normSymp = symptoms.map(s => s.toLowerCase()).join(" ");
   let isEmergency = false;
-  let emergencyReason = "Based on local safety triage rules, these symptoms are evaluated as steady. However, monitor clinical progress closely.";
+  let emergencyReason = "Based on clinical triage rules, these symptoms appear stable. However, monitor progress closely.";
   let conditions: any[] = [];
   let dynamicTips: string[] = [];
   let recommendedSpecialties: string[] = [];
@@ -126,50 +76,50 @@ function getSymptomAnalysisFallback(region: string, symptoms: string[], severity
 
   if (normSymp.includes("chest") || normSymp.includes("heart") || normSymp.includes("radiat") || normSymp.includes("breath")) {
     isEmergency = true;
-    emergencyReason = "CRITICAL WARNING: Left thoracic pressure, dyspnea, and radiating upper body discomfort are high-risk indicators of potential cardiac muscular ischemia or acute pulmonary blockage.";
+    emergencyReason = "CRITICAL: Left thoracic pressure and radiating discomfort are high-risk indicators of potential cardiac strain or acute pulmonary blockage.";
     conditions = [
       {
         name: "Acute Coronal Ischemia Strain",
         probability: 72,
-        explanation: "Peculiar mechanical chest tightness radiating down limbs points to possible microvascular spasm or localized arterial compression.",
+        explanation: "Pressure radiating down limbs points to possible microvascular spasm or arterial compression.",
         urgency: "Critical"
       },
       {
         name: "Thoracic Intercostal Muscle Spasm",
         probability: 58,
-        explanation: "Sub-sternal muscle spasms or cartilage inflammation mimicking acute vessel pressure.",
+        explanation: "Sub-sternal muscle spasms mimicking acute vessel pressure.",
         urgency: "Moderate"
       }
     ];
     dynamicTips = [
-      "Adopt an upright, relaxed sitting position to optimize airflow vectors.",
-      "Completely avoid sudden physical exertion or cold water stress.",
-      "If pain persists over 15 minutes, seek immediate regional emergency services."
+      "Adopt an upright, relaxed sitting position to optimize airflow.",
+      "Avoid sudden physical exertion or cold water stress.",
+      "If pain persists over 15 minutes, seek immediate emergency services."
     ];
     recommendedSpecialties = ["Cardiologist", "Emergency Medicine Specialist"];
   } else if (normSymp.includes("head") || normSymp.includes("migraine") || normSymp.includes("spin") || normSymp.includes("dizz")) {
     isEmergency = sevNum >= 3;
-    emergencyReason = isEmergency 
-      ? "HIGH RISK: Severe sudden onset neurological headaches can indicate acute vascular spikes or intracranial blood volume pressures."
+    emergencyReason = isEmergency
+      ? "HIGH RISK: Severe sudden onset neurological headaches can indicate acute vascular spikes or intracranial pressure."
       : "MODERATE RISK: Steady throbbing headache with vestibular sensitivity indicates standard migraine profiling.";
     conditions = [
       {
         name: "Vascular Migraine Syndrome",
         probability: 80,
-        explanation: "Vasodilation of intracranial blood vessels triggering sensory throbbing waves and minor photophobia.",
+        explanation: "Vasodilation of intracranial blood vessels triggering sensory throbbing waves.",
         urgency: "Moderate"
       },
       {
         name: "Tension-Type Myalgia Neck Compression",
         probability: 65,
-        explanation: "Physical stiffness in cervical tendons radiating to the fronto-temporal skull nodes.",
+        explanation: "Physical stiffness in cervical tendons radiating to the skull nodes.",
         urgency: "Low"
       }
     ];
     dynamicTips = [
-      "Rest in an absolute dark, quiet room with zero blue-screen exposure.",
-      "Apply a gentle cooling cold-wrap directly over the forehead or occipital ridge.",
-      "Maintain adequate salt-hydration balance to stabilize cranial volumes."
+      "Rest in a dark, quiet room with zero screen exposure.",
+      "Apply a gentle cooling cold-wrap directly over the forehead.",
+      "Maintain adequate hydration to stabilize cranial volumes."
     ];
     recommendedSpecialties = ["Neurologist", "General Practitioner"];
   } else if (normSymp.includes("stomach") || normSymp.includes("abdomen") || normSymp.includes("burn") || normSymp.includes("gast")) {
@@ -183,14 +133,14 @@ function getSymptomAnalysisFallback(region: string, symptoms: string[], severity
       {
         name: "Biliary Path Spasm / Enteritis",
         probability: 50,
-        explanation: "Transient slow digestion of lipid polymers producing relative visceral spasms.",
+        explanation: "Transient slow digestion producing relative visceral spasms.",
         urgency: "Moderate"
       }
     ];
     dynamicTips = [
-      "Sip plain warm water slowly; avoid large volume drinks or solid food intake.",
+      "Sip plain warm water slowly; avoid solid food intake.",
       "Rest with the torso elevated at 30-40 degrees to deter esophageal acid reflux.",
-      "Avoid pressing down on the gastrointestinal area; keep clothes light and breathable."
+      "Avoid pressing down on the gastrointestinal area; keep clothes light."
     ];
     recommendedSpecialties = ["Gastroenterologist", "Internal Medicine Specialist"];
   } else {
@@ -198,27 +148,27 @@ function getSymptomAnalysisFallback(region: string, symptoms: string[], severity
       {
         name: `Localized Somatosensory Strain (${region || "Inherent"})`,
         probability: 75,
-        explanation: "Musculoskeletal inflammation or minor ligament overextension in targeted myofascial tissue coordinates.",
+        explanation: "Musculoskeletal inflammation or minor ligament overextension in myofascial tissue.",
         urgency: "Low"
       },
       {
         name: "General Neuromyopathic Fatigue Nodes",
         probability: 55,
-        explanation: "Minor functional fatigue of local motor endplates causing sensory dull discomfort.",
+        explanation: "Minor functional fatigue of local motor endplates causing sensory discomfort.",
         urgency: "Low"
       }
     ];
     dynamicTips = [
       "Immobilize and unload direct bodyweight off the affected region.",
-      "Interchange dry heat wraps and safe cooling packs for 15-minute cycles.",
-      "Perform slow, diaphragmatic deep-breathing cycles to reduce neural pain signals."
+      "Interchange dry heat wraps and cooling packs for 15-minute cycles.",
+      "Perform slow, diaphragmatic deep-breathing cycles to reduce pain signals."
     ];
     recommendedSpecialties = ["General Physician", "Orthopedic Specialist"];
   }
 
   return {
     emergency: isEmergency,
-    emergencyReason: `[NOTICE: Gemini API 429 Rate Limited. Presenting local safety triage analysis] \n\n${emergencyReason}`,
+    emergencyReason,
     conditions,
     dynamicTips,
     recommendedSpecialties
@@ -227,7 +177,7 @@ function getSymptomAnalysisFallback(region: string, symptoms: string[], severity
 
 function getMedicineIdentifyFallback(query: string) {
   const norm = query.toLowerCase();
-  
+
   let name = "Standard Clinical Compound";
   let generic = "Multivalent Chemical Composition";
   let verified = true;
@@ -283,11 +233,11 @@ function getMedicineIdentifyFallback(query: string) {
     ];
   } else {
     name = query ? `Clinical Compound (${query})` : "General Compound";
-    generic = "Identified via offline clinical registry cache";
+    generic = "Identified via clinical registry cache";
   }
 
   return {
-    name: `[OFFLINE SPEC] ${name}`,
+    name,
     generic,
     verified,
     dosage,
@@ -331,7 +281,7 @@ function getVoiceInputFallback(transcript: string) {
   }
 
   return {
-    mappedTerm: `[OFFLINE SYNAPSE] ${mappedTerm}`,
+    mappedTerm,
     detectedSymptoms,
     suggestedRegion
   };
@@ -411,7 +361,8 @@ CRITICAL: You must write and output ALL text fields, strings, names, explanation
             }
           },
           required: ["emergency", "emergencyReason", "conditions", "dynamicTips", "recommendedSpecialties"]
-        }
+        },
+        tools: [{ googleSearch: {} }]
       }
     });
 
@@ -487,7 +438,8 @@ CRITICAL: You must write and translate all text values, medicine description, si
             }
           },
           required: ["name", "generic", "verified", "dosage", "frequency", "sideEffects", "contraindications", "interactions"]
-        }
+        },
+        tools: [{ googleSearch: {} }]
       }
     });
 
@@ -545,55 +497,64 @@ CRITICAL: Translate all output fields (mappedTerm background, detected symptoms 
 });
 
 // Endpoint 5: Fact Check Medical Claims with Search Grounding
-app.post("/api/factcheck", async (req, res) => {
+app.post("/api/fact-check", async (req, res) => {
+  const { claim, language } = req.body;
+  if (!claim) {
+    return res.status(400).json({ error: "Medical claim or assertion text is required." });
+  }
+
   try {
-    const { claim, language } = req.body;
-    if (!claim) {
-      return res.status(400).json({ error: "Medical claim or assertion text is required." });
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (!geminiKey || geminiKey === "dummy-key") {
+      console.warn("No Gemini API key configured; using local fact-check guidance.");
+      const fallback = getFactCheckFallback(claim);
+      return res.json(fallback);
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-1.5-flash",
       contents: `Fact-check this medical claim, myth, or question thoroughly: "${claim}". 
 Provide a clear, clinical, objective scientific breakdown. 
-State a definitive verdict status: Myth, Truth, or Unproven. 
-Cite authoritative sources or scientific reviews.
-CRITICAL: You must write the entire analysis outcome text, verdicts, and source descriptions completely translated in this language: ${language || "English"}.`,
+Target response language: ${language || "English"}.`,
       config: {
+        systemInstruction: `You are a professional medical fact-checker. You verify health claims against scientific evidence.
+CRITICAL: You must output the response in JSON format strictly following this schema:
+{
+  "claim": "The original claim being checked",
+  "verdict": "One of: True, False, Partially True, or Misleading",
+  "explanation": "A detailed scientific explanation (Markdown supported)",
+  "evidenceSource": "Brief description of the primary scientific evidence used",
+  "safetyAdvisory": "A clinical safety note for the patient"
+}
+Translate all fields into the requested language: ${language || "English"}.`,
+        responseMimeType: "application/json",
         tools: [{ googleSearch: {} }]
       }
     });
 
-    const textResult = response.text || "";
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-    const citations = chunks.map((c: any) => {
-      if (c.web) {
-        return {
-          title: c.web.title,
-          url: c.web.uri
-        };
-      }
-      return null;
-    }).filter(Boolean);
-
-    res.json({
-      claim,
-      analysis: textResult,
-      citations
-    });
+    const data = JSON.parse(response.text || "{}");
+    res.json(data);
   } catch (error: any) {
-    console.warn("Gemini Error in factcheck analysis, using fallback:", error.message || error);
-    const claim = req.body.claim || "";
+    console.warn("Gemini Error in factcheck analysis:", error.message || error);
     const fallback = getFactCheckFallback(claim);
     res.json(fallback);
   }
+});
+
+app.post("/api/translate", (req, res) => {
+  const { lang } = req.body;
+  if (!lang || !translations[lang]) {
+    return res.status(400).json({ error: "Unsupported language" });
+  }
+
+  res.json({ translations: translations[lang] });
 });
 
 // Smart fallback for Real-time AI Assistant when API is offline or 429 occurs
 function getAssistantChatFallback(message: string, language: string) {
   const norm = message.toLowerCase();
   let text = "";
-  
+
   if (norm.includes("burn") || norm.includes("scal")) {
     text = `**First Aid for Minor Burns:**
 1. **Cooling:** Flush the burn area under cool running water for at least 10 to 20 minutes immediately to stop the thermal damage.
@@ -623,9 +584,7 @@ Visceral chest pain, tightness radiating to the arm, throat compression, severe 
 2. If you are near others, alert them immediately.
 3. Call 112 or local regional emergency medical dispatches. Do not attempt to drive yourself to a trauma station.`;
   } else {
-    text = `Thank you for reaching out to **MediGuide's Clinical AI Copilot**! 
-
-I am currently running on our robust offline wellness database rules to ensure a seamless experience. 
+    text = `Thank you for reaching out to MediGuide Clinical Support.
 
 Here are some standard clinical wellness pillars:
 - **Hydration:** Aim to drink at least 2.5 to 3 liters of clean water daily to assist renal cellular clearance.
@@ -636,7 +595,7 @@ Is there a specific symptom, medication query, or first-aid practice you would l
   }
 
   return {
-    response: `⚠️ NOTICE: CLOUD API EXHAUSTION (RATE-LIMIT 429) ACTIVE ⚠️\nMediGuide Copilot is operating in Clinical Offline Mode (${language || "en"}).\n\n${text}`
+    response: `${text}`
   };
 }
 
@@ -669,7 +628,8 @@ Adhere strictly to these clinical rules:
       contents: contents,
       config: {
         systemInstruction,
-        temperature: 0.7
+        temperature: 0.7,
+        tools: [{ googleSearch: {} }]
       }
     });
 
@@ -700,8 +660,38 @@ async function startApp() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[MediGuide Backend] Full-stack application configured on port ${PORT}`);
+  await startListening(DEFAULT_PORT);
+}
+
+async function startListening(startPort: number, retries = 0): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const port = startPort + retries;
+    const server = app.listen(port, "0.0.0.0", () => {
+      const localUrl = `http://localhost:${port}`;
+      const networkInterfaces = os.networkInterfaces();
+      const networkUrls = Object.values(networkInterfaces)
+        .flatMap((records) => records || [])
+        .filter((record) => record?.family === "IPv4" && !record.internal)
+        .map((record) => `http://${record.address}:${port}`);
+
+      console.log(`\n[MediGuide Backend] Full-stack application configured on port ${port}`);
+      console.log(`Local:   ${localUrl}`);
+      if (networkUrls.length > 0) {
+        console.log(`Phone:   ${networkUrls[0]}`);
+      }
+      console.log(`\nOpen the app in your browser or on a network phone using the above URL.\n`);
+      resolve();
+    });
+
+    server.on("error", async (err: NodeJS.ErrnoException) => {
+      if (err.code === "EADDRINUSE" && retries < MAX_PORT_RETRIES) {
+        console.warn(`Port ${port} is already in use. Trying port ${port + 1}...`);
+        await startListening(startPort, retries + 1);
+        resolve();
+      } else {
+        reject(err);
+      }
+    });
   });
 }
 

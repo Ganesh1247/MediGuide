@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import HumanBodyCanvas, { BODY_REGIONS } from "../3d/HumanBodyCanvas";
 import { BodyRegion } from "../../types";
@@ -33,7 +33,15 @@ interface HomeProps {
 export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
   const [hoveredRegion, setHoveredRegion] = useState<BodyRegion | null>(null);
   const [selectedRegionForTriage, setSelectedRegionForTriage] = useState<BodyRegion | null>(null);
+  const [touchFeedbackRegion, setTouchFeedbackRegion] = useState<BodyRegion | null>(null);
+  const [activeTouchedRegion, setActiveTouchedRegion] = useState<BodyRegion | null>(null);
   const { t } = useLanguage();
+
+  useEffect(() => {
+    if (!touchFeedbackRegion) return;
+    const timer = setTimeout(() => setTouchFeedbackRegion(null), 1800);
+    return () => clearTimeout(timer);
+  }, [touchFeedbackRegion]);
 
   const services = [
     {
@@ -74,12 +82,6 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
     },
   ];
 
-  const quickStats = [
-    { label: t("home_active_symptoms").split(' ')[0] + " Rate", value: "72 bpm", color: "var(--red-alert)", icon: Heart },
-    { label: "Oxygen", value: "98%", color: "var(--accent)", icon: Activity },
-    { label: "Temp", value: "98.4 °F", color: "var(--amber-warn)", icon: Thermometer }
-  ];
-
   return (
     <div className="space-y-24 animate-fadeIn">
       
@@ -91,9 +93,9 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
             initial={{ scale: 1.05, opacity: 0 }}
             animate={{ scale: 1, opacity: 0.35 }}
             transition={{ duration: 1.5, ease: "easeOut" }}
-            src="/symptom_triage.png"
+            src="https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&q=80&w=1800"
             className="hero-bg-img w-full h-full object-cover brightness-70"
-            alt="Clinical healthcare background"
+            alt="Indian clinical healthcare environment"
           />
           <div className="absolute inset-0 hero-image-mask z-20" />
           <div className="absolute inset-0 cyber-grid-overlay opacity-20" />
@@ -162,7 +164,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
               {t("select_region_desc")}
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             {BODY_REGIONS.slice(0, 3).map(r => (
               <button
                 key={r.id}
@@ -175,57 +177,128 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
           </div>
         </div>
 
-        <div className="card !p-0 min-h-[520px] relative overflow-hidden bg-[#0A0D14] border-2 border-white/5 flex items-center justify-center shadow-[0_0_100px_rgba(0,0,0,0.4)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.03)_0%,transparent_70%)]" />
+        <div className="mx-4 rounded-[32px] border border-white/10 bg-bg-surface/70 p-5 shadow-2xl backdrop-blur-2xl flex flex-col sm:flex-row items-center gap-4">
+          <div className="flex-1">
+            <h3 className="text-lg font-black text-white tracking-tight">Touch a body region to begin a guided triage.</h3>
+            <p className="text-sm text-text-secondary leading-relaxed mt-2">Instant help from MediGuide with one tap, no more accidental hover states on mobile.</p>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-3 text-xs uppercase font-black tracking-[0.25em] text-accent shadow-accent/10">
+            <span>Tap & explore</span>
+            <ArrowRight className="w-4 h-4" />
+          </div>
+        </div>
 
-          <HumanBodyCanvas
-            onRegionHover={setHoveredRegion}
-            onRegionSelect={(reg) => setSelectedRegionForTriage(reg)}
-            selectedRegionId={hoveredRegion?.id || null}
-          />
-
-          <AnimatePresence>
-            {hoveredRegion && (
-              <motion.div
-                initial={{ opacity: 0, x: 50, scale: 0.9 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: 50, scale: 0.9 }}
-                className="absolute z-10 w-full max-w-sm bottom-6 left-4 sm:top-10 sm:right-10 sm:left-auto sm:bottom-auto sm:w-80 bg-bg-elevated/95 border border-accent/40 p-5 sm:p-6 rounded-[32px] shadow-3xl backdrop-blur-3xl"
-              >
-                <div className="flex items-center gap-4 mb-5">
-                  <span className="text-4xl p-3 bg-accent/10 rounded-3xl border border-accent/20 shadow-inner">{hoveredRegion.icon}</span>
-                  <div>
-                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">{hoveredRegion.label}</h3>
-                    <p className="text-[10px] uppercase font-black text-accent tracking-[0.3em] mt-2">{t("region_active")}</p>
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(520px,1fr)_280px] gap-6 px-4">
+          <div className="space-y-6">
+            <div className="card !p-6 bg-bg-surface/80 border border-white/10 shadow-2xl backdrop-blur-md">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-3xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                  <Heart className="w-7 h-7 text-accent" />
                 </div>
-                <p className="text-base text-text-secondary font-medium leading-relaxed mb-6">{hoveredRegion.description}</p>
-                <button
-                  onClick={() => setSelectedRegionForTriage(hoveredRegion)}
-                  className="w-full btn-primary !py-4 justify-center shadow-2xl shadow-accent/20 group border-none"
-                >
-                  <span className="group-hover:scale-110 transition-transform">{t("begin_analysis")}</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Viewport HUD decoration */}
-          <div className="absolute bottom-8 left-8 p-6 bg-black/40 backdrop-blur-md rounded-[32px] border border-white/10 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-green-ok animate-ping" />
-              <span className="font-mono text-[10px] text-white uppercase font-black tracking-widest">{t("active_sensor")}</span>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-black text-text-dim">Regional Health</p>
+                  <h3 className="text-xl font-black text-white leading-tight">Live body-region intelligence</h3>
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-text-secondary leading-relaxed">
+                Select any part of the anatomical model to receive contextual advice, risk indicators, and specialty recommendations.
+              </p>
             </div>
-            <div className="grid grid-cols-2 gap-6 pt-2">
-              <div className="space-y-1">
-                <p className="text-[8px] uppercase font-black text-text-dim">Resolution</p>
-                <p className="text-xs font-mono font-bold text-accent">8K HDR</p>
+
+            <div className="card !p-6 bg-bg-surface/80 border border-white/10 shadow-2xl backdrop-blur-md">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-3xl bg-amber-warn/10 border border-amber-warn/20 flex items-center justify-center">
+                  <ShieldCheck className="w-7 h-7 text-amber-warn" />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-black text-text-dim">Safety Guidance</p>
+                  <h3 className="text-xl font-black text-white leading-tight">Clinical best practices</h3>
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-[8px] uppercase font-black text-text-dim">Latency</p>
-                <p className="text-xs font-mono font-bold text-accent">12ms</p>
+              <p className="mt-4 text-sm text-text-secondary leading-relaxed">
+                Our model highlights safe next steps and reminds you when real medical evaluation is strongly recommended.
+              </p>
+            </div>
+          </div>
+
+          <div className="card !p-0 min-h-[520px] relative overflow-hidden bg-[#0A0D14] border-2 border-white/5 flex items-center justify-center shadow-[0_0_100px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.05)_0%,transparent_70%)]" />
+
+            <HumanBodyCanvas
+              onRegionHover={setHoveredRegion}
+              onRegionSelect={(reg) => {
+                setActiveTouchedRegion(reg);
+                setTouchFeedbackRegion(reg);
+              }}
+              selectedRegionId={activeTouchedRegion?.id || hoveredRegion?.id || null}
+            />
+
+            <AnimatePresence>
+              {touchFeedbackRegion && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.96 }}
+                  className="absolute z-20 bottom-5 left-1/2 -translate-x-1/2 w-[92%] sm:w-auto sm:max-w-md bg-bg-elevated/92 border border-accent/35 px-4 py-3 sm:px-5 sm:py-4 rounded-2xl shadow-2xl backdrop-blur-xl"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl p-2 bg-accent/10 rounded-xl border border-accent/20 shadow-inner">{touchFeedbackRegion.icon}</span>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-black text-text-primary uppercase tracking-wide leading-tight">{touchFeedbackRegion.label}</h3>
+                      <p className="text-[10px] uppercase font-black text-accent tracking-[0.2em] mt-1">Region selected</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="absolute bottom-8 left-8 p-6 bg-black/40 backdrop-blur-md rounded-[32px] border border-white/10 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-green-ok animate-ping" />
+                <span className="font-mono text-[10px] text-white uppercase font-black tracking-widest">{t("active_sensor")}</span>
               </div>
+              <div className="grid grid-cols-2 gap-6 pt-2">
+                <div className="space-y-1">
+                  <p className="text-[8px] uppercase font-black text-text-dim">Resolution</p>
+                  <p className="text-xs font-mono font-bold text-accent">8K HDR</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[8px] uppercase font-black text-text-dim">Latency</p>
+                  <p className="text-xs font-mono font-bold text-accent">12ms</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="card !p-6 bg-bg-surface/80 border border-white/10 shadow-2xl backdrop-blur-md">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-3xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                  <MapPin className="w-7 h-7 text-accent" />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-black text-text-dim">Live Status</p>
+                  <h3 className="text-xl font-black text-white leading-tight">Real-time scan overview</h3>
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-text-secondary leading-relaxed">
+                The model updates instantly as you hover and choose regions, reducing guesswork and keeping the experience focused.
+              </p>
+            </div>
+
+            <div className="card !p-6 bg-bg-surface/80 border border-white/10 shadow-2xl backdrop-blur-md">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-3xl bg-red-alert/10 border border-red-alert/20 flex items-center justify-center">
+                  <AlertTriangle className="w-7 h-7 text-red-alert" />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-black text-text-dim">Alert Panel</p>
+                  <h3 className="text-xl font-black text-white leading-tight">Risk signals & next steps</h3>
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-text-secondary leading-relaxed">
+                When any region looks concerning, MediGuide highlights safe follow-up actions and reminds you to consult trained professionals.
+              </p>
             </div>
           </div>
         </div>
@@ -275,29 +348,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
         </div>
       </section>
 
-      {/* ── 4. Live Body Telemetrics ── */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {quickStats.map((st) => (
-          <div key={st.label} className="card !p-6 flex items-center justify-between !bg-bg-surface/50 border border-white/5 group hover:border-accent/30 transition-all duration-500 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-              <st.icon className="w-24 h-24" />
-            </div>
-            <div className="relative z-10 space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-text-dim">{st.label}</p>
-              <p className="text-4xl font-display font-black text-white group-hover:text-accent transition-colors tracking-tighter">{st.value}</p>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: st.color }} />
-                <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary opacity-60 group-hover:opacity-100 transition-opacity">{t("active_sensor")}</span>
-              </div>
-            </div>
-            <div className="relative z-10 w-16 h-16 rounded-[28px] bg-bg-void flex items-center justify-center border border-white/5 shadow-2xl group-hover:scale-110 transition-all duration-500">
-              <st.icon className="w-8 h-8 opacity-60 group-hover:opacity-100 transition-all" style={{ color: st.color }} />
-            </div>
-          </div>
-        ))}
-      </section>
-
-      {/* ── 5. Information & Safety Sections ── */}
+      {/* ── 4. Information & Safety Sections ── */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4">
         <div className="card !p-6 bg-accent/5 border-accent/20 flex gap-6 items-start shadow-accent/5">
           <div className="w-16 h-16 rounded-3xl bg-accent/10 flex items-center justify-center shrink-0 border border-accent/20 shadow-inner">

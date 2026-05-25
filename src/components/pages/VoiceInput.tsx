@@ -12,10 +12,7 @@ interface VoiceInputProps {
 const SUPPORTED_LANGUAGES = [
   { id: "en-IN", name: "English", accent: "🇮🇳" },
   { id: "te-IN", name: "Telugu", accent: "🇮🇳" },
-  { id: "hi-IN", name: "Hindi", accent: "🇮🇳" },
-  { id: "ta-IN", name: "Tamil", accent: "🇮🇳" },
-  { id: "kn-IN", name: "Kannada", accent: "🇮🇳" },
-  { id: "ml-IN", name: "Malayalam", accent: "🇮🇳" }
+  { id: "hi-IN", name: "Hindi", accent: "🇮🇳" }
 ];
 
 export default function VoiceInput({ onTriageRegionSelect }: VoiceInputProps) {

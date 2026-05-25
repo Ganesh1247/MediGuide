@@ -197,19 +197,30 @@ export default function HumanBodyCanvas({
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
-    const handleMove = (e: PointerEvent) => {
+    renderer.domElement.style.touchAction = "none";
+
+    const getRegionAtPointer = (e: PointerEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
       raycaster.setFromCamera(mouse, camera);
       const hits = raycaster.intersectObjects(interactiveObjects);
+      return hits.length > 0 ? BODY_REGIONS.find(r => r.id === hits[0].object.userData.regionId) || null : null;
+    };
 
-      if (hits.length > 0) {
-        const id = hits[0].object.userData.regionId;
-        setHoveredRegion(id);
-        onRegionHover(BODY_REGIONS.find(r => r.id === id) || null);
-        container.style.cursor = "pointer";
+    const handleMove = (e: PointerEvent) => {
+      const region = getRegionAtPointer(e);
+      const isTouch = e.pointerType === "touch";
+
+      if (region) {
+        setHoveredRegion(region.id);
+        if (!isTouch) {
+          onRegionHover(region);
+          container.style.cursor = "pointer";
+        } else {
+          onRegionHover(null);
+          container.style.cursor = "default";
+        }
       } else {
         setHoveredRegion(null);
         onRegionHover(null);
@@ -217,15 +228,23 @@ export default function HumanBodyCanvas({
       }
     };
 
-    const handleClick = () => {
-      if (hoveredRegion) {
-        const region = BODY_REGIONS.find(r => r.id === hoveredRegion);
-        if (region) onRegionSelect(region);
+    const handlePointerDown = (e: PointerEvent) => {
+      const region = getRegionAtPointer(e);
+      if (region) {
+        setHoveredRegion(region.id);
+      }
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      const region = getRegionAtPointer(e);
+      if (region) {
+        onRegionSelect(region);
       }
     };
 
     renderer.domElement.addEventListener("pointermove", handleMove);
-    renderer.domElement.addEventListener("click", handleClick);
+    renderer.domElement.addEventListener("pointerdown", handlePointerDown);
+    renderer.domElement.addEventListener("pointerup", handlePointerUp);
 
     const animate = () => {
       requestAnimationFrame(animate);
@@ -253,7 +272,8 @@ export default function HumanBodyCanvas({
     return () => {
       renderer.dispose();
       renderer.domElement.removeEventListener("pointermove", handleMove);
-      renderer.domElement.removeEventListener("click", handleClick);
+      renderer.domElement.removeEventListener("pointerdown", handlePointerDown);
+      renderer.domElement.removeEventListener("pointerup", handlePointerUp);
       if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
     };
   }, [gender]);

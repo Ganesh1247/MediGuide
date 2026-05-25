@@ -72,29 +72,29 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-12 animate-slideUp pb-12">
+    <div className="max-w-7xl mx-auto space-y-8 sm:space-y-12 animate-slideUp pb-12">
       
       {/* ── Header ── */}
-      <section className="text-center space-y-4">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-accent/10 border border-accent/20 text-accent rounded-full">
+      <section className="text-center space-y-4 px-2">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-accent/10 border border-accent/25 text-accent rounded-full">
           <Stethoscope className="w-4 h-4" />
           <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t("nav_triage_check")} Matrix</span>
         </div>
-        <h1 className="text-5xl font-black text-white uppercase tracking-tight">{t("nav_triage_check").split(' ')[0]} <span className="text-accent">Audit</span></h1>
-        <p className="text-lg text-text-secondary font-medium max-w-2xl mx-auto">
+        <h1 className="text-3xl sm:text-5xl font-black text-text-primary uppercase tracking-tight">{t("nav_triage_check").split(' ')[0]} <span className="text-accent">Audit</span></h1>
+        <p className="text-base sm:text-lg text-text-secondary font-medium max-w-2xl mx-auto">
           {t("select_region_desc")}
         </p>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-start">
         
         {/* ── Left: 3D Viewport ── */}
         <div className="lg:col-span-5 space-y-8">
-          <div className="card !p-0 overflow-hidden bg-[#0A0D14] border-2 border-white/5 shadow-2xl relative min-h-[550px] flex flex-col">
-            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-bg-elevated/50 relative z-10">
+          <div className="card !p-0 overflow-hidden bg-bg-surface/95 border border-border shadow-2xl relative min-h-[500px] sm:min-h-[550px] flex flex-col">
+            <div className="p-4 sm:p-6 border-b border-border flex items-center justify-between bg-bg-elevated/45 relative z-10">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{selectedRegion.icon}</span>
-                <h3 className="text-xl font-black text-white uppercase tracking-tighter">{selectedRegion.label}</h3>
+                <h3 className="text-lg sm:text-xl font-black text-text-primary uppercase tracking-tighter">{selectedRegion.label}</h3>
               </div>
             </div>
 
@@ -107,14 +107,14 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.05)_0%,transparent_70%)] pointer-events-none" />
             </div>
 
-            <div className="p-8 bg-bg-elevated/50 border-t border-white/5 relative z-10">
-              <div className="grid grid-cols-2 gap-3">
+            <div className="p-4 sm:p-8 bg-bg-elevated/40 border-t border-border relative z-10">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
                 {BODY_REGIONS.map(r => (
                   <button
                     key={r.id}
                     onClick={() => setSelectedRegion(r)}
-                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all border-2 cursor-pointer ${
-                      selectedRegion.id === r.id ? "bg-accent border-accent text-black shadow-xl shadow-accent/20" : "bg-bg-void border-border text-text-dim hover:border-accent/40"
+                    className={`px-3 sm:px-4 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all border cursor-pointer ${
+                      selectedRegion.id === r.id ? "bg-accent border-accent text-black shadow-xl shadow-accent/20" : "bg-bg-void/60 border-border text-text-secondary hover:border-accent/40"
                     }`}
                   >
                     {r.label.split(" ")[0]}
@@ -127,7 +127,7 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
 
         {/* ── Right: Intake Form ── */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="card !p-10 space-y-10 bg-bg-elevated/30 border-2 border-border shadow-2xl min-h-[600px] flex flex-col">
+          <div className="card !p-5 sm:!p-8 lg:!p-10 space-y-8 sm:space-y-10 bg-bg-elevated/35 border border-border shadow-2xl min-h-[560px] sm:min-h-[600px] flex flex-col">
             <AnimatePresence mode="wait">
               {apiLoading ? (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col items-center justify-center gap-8">
@@ -136,19 +136,19 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
                 </motion.div>
               ) : result ? (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-8">
-                    <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Assessment <span className="text-accent">Output</span></h2>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-6 sm:pb-8">
+                    <h2 className="text-2xl sm:text-3xl font-black text-text-primary uppercase tracking-tighter">Assessment <span className="text-accent">Output</span></h2>
                     <button onClick={() => setResult(null)} className="btn-secondary !py-3 !px-6 !text-[10px] uppercase tracking-widest border-none cursor-pointer">New Checkup</button>
                   </div>
 
                   {result.emergency && (
-                    <div className="p-8 bg-red-alert/10 border-2 border-red-alert/40 rounded-[32px] space-y-6 animate-glow">
+                    <div className="p-5 sm:p-8 bg-red-alert/10 border border-red-alert/40 rounded-[24px] sm:rounded-[32px] space-y-6 animate-glow">
                       <div className="flex items-center gap-5">
                         <AlertTriangle className="w-10 h-10 text-red-alert animate-bounce" />
                         <h3 className="text-2xl font-black text-red-alert uppercase">{t("safety_advisory_title")}</h3>
                       </div>
-                      <p className="text-lg text-text-secondary font-medium leading-relaxed">{result.emergencyReason}</p>
-                      <div className="flex gap-4">
+                      <p className="text-base sm:text-lg text-text-secondary font-medium leading-relaxed">{result.emergencyReason}</p>
+                      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                         <a href="tel:108" className="btn-danger !py-5 flex-1 justify-center border-none cursor-pointer">CALL 108 NOW</a>
                         <button onClick={() => onNavigateToTab("emergency")} className="btn-secondary !py-5 flex-1 justify-center !text-red-alert !border-red-alert/40 hover:!bg-red-alert hover:!text-white border-none cursor-pointer">FIND HOSPITAL</button>
                       </div>
@@ -159,9 +159,9 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
                     <p className="text-xs font-black uppercase tracking-widest text-text-dim">Potential Conditions Correlation</p>
                     <div className="space-y-4">
                       {result.conditions.map(c => (
-                        <div key={c.name} className="p-6 bg-bg-void/50 border-2 border-border rounded-3xl space-y-4 hover:border-accent/40 transition-all">
+                        <div key={c.name} className="p-5 sm:p-6 bg-bg-void/50 border border-border rounded-2xl sm:rounded-3xl space-y-4 hover:border-accent/40 transition-all">
                           <div className="flex items-center justify-between">
-                            <h4 className="text-xl font-black text-white uppercase">{c.name}</h4>
+                            <h4 className="text-lg sm:text-xl font-black text-text-primary uppercase">{c.name}</h4>
                             <span className="text-xl font-mono font-black text-accent">{c.probability}%</span>
                           </div>
                           <div className="h-2.5 w-full bg-bg-surface rounded-full overflow-hidden border border-white/5">
@@ -184,8 +184,8 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
                         <button
                           key={s}
                           onClick={() => toggleSymptom(s)}
-                          className={`p-5 rounded-[22px] border-2 text-left flex items-center justify-between group transition-all cursor-pointer ${
-                            selectedSymptoms.includes(s) ? "bg-accent border-accent text-black font-black" : "bg-bg-void/40 border-border text-text-secondary hover:border-accent/30"
+                          className={`p-4 sm:p-5 rounded-[18px] sm:rounded-[22px] border text-left flex items-center justify-between group transition-all cursor-pointer ${
+                            selectedSymptoms.includes(s) ? "bg-accent border-accent text-black font-black" : "bg-bg-void/50 border-border text-text-secondary hover:border-accent/30 hover:bg-bg-void/70"
                           }`}
                         >
                           <span className="text-sm">{s}</span>
@@ -196,16 +196,16 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
                   </div>
 
                   <div className="space-y-4">
-                    <p className="text-xs font-black uppercase tracking-widest text-text-dim flex items-center gap-3">
+                    <p className="text-xs font-black uppercase tracking-widest text-text-secondary flex items-center gap-3">
                       <span className="w-8 h-[2px] bg-accent" /> 2. Intensity Calibration
                     </p>
-                    <div className="grid grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                       {severityLevels.map((l, i) => (
                         <button
                           key={l.label}
                           onClick={() => setSeverity(i)}
-                          className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
-                            severity === i ? "bg-amber-warn border-amber-warn text-black font-black" : "bg-bg-void/40 border-border text-text-dim hover:border-amber-warn/40"
+                          className={`flex flex-col items-center gap-2 p-3 sm:p-4 rounded-2xl border transition-all cursor-pointer ${
+                            severity === i ? "bg-amber-warn border-amber-warn text-black font-black" : "bg-bg-void/50 border-border text-text-secondary hover:border-amber-warn/40"
                           }`}
                         >
                           <span className="text-3xl">{l.icon}</span>
@@ -216,16 +216,16 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
                   </div>
 
                   <div className="space-y-4">
-                    <p className="text-xs font-black uppercase tracking-widest text-text-dim flex items-center gap-3">
+                    <p className="text-xs font-black uppercase tracking-widest text-text-secondary flex items-center gap-3">
                       <span className="w-8 h-[2px] bg-accent" /> 3. Duration
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
                       {durationChips.map((chip) => (
                         <button
                           key={chip}
                           onClick={() => setDuration(chip)}
-                          className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all border-2 cursor-pointer ${
-                            duration === chip ? "bg-blue border-blue text-black" : "bg-bg-void border-border text-text-dim hover:border-blue/40"
+                          className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all border cursor-pointer ${
+                            duration === chip ? "bg-blue border-blue text-white shadow-lg shadow-blue/20" : "bg-bg-void/60 border-border text-text-secondary hover:border-blue/40"
                           }`}
                         >
                           {chip}
@@ -235,20 +235,20 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
                   </div>
 
                   <div className="space-y-4">
-                    <p className="text-xs font-black uppercase tracking-widest text-text-dim flex items-center gap-3">
+                    <p className="text-xs font-black uppercase tracking-widest text-text-secondary flex items-center gap-3">
                       <span className="w-8 h-[2px] bg-accent" /> 4. Contextual Notes
                     </p>
                     <textarea
                       value={customSymptom}
                       onChange={e => setCustomSymptom(e.target.value)}
                       placeholder={t("home_desc")}
-                      className="input !h-32 !p-6 !text-base resize-none"
+                      className="input !h-28 sm:!h-32 !p-4 sm:!p-6 !text-sm sm:!text-base !text-text-primary placeholder:!text-text-dim resize-none"
                     />
                   </div>
 
                   <button
                     onClick={handleRunAnalysis}
-                    className="w-full btn-primary !py-7 !text-lg justify-center shadow-2xl shadow-accent/20 group overflow-hidden relative border-none cursor-pointer"
+                    className="w-full btn-primary !py-5 sm:!py-7 !text-base sm:!text-lg justify-center shadow-2xl shadow-accent/20 group overflow-hidden relative border-none cursor-pointer"
                   >
                     <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
                     <Sparkles className="w-6 h-6" />

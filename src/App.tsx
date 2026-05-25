@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, PointerEvent, TouchEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Home from "./components/pages/Home";
 import SymptomChecker from "./components/pages/SymptomChecker";
@@ -8,7 +8,9 @@ import FactChecker from "./components/pages/FactChecker";
 import Emergency from "./components/pages/Emergency";
 import NearbyHospitalsMap from "./components/pages/NearbyHospitalsMap";
 import AIAssistant from "./components/AIAssistant";
-import { useLanguage, LANGUAGES } from "./context/LanguageContext";
+import GlobalBackground from "./components/GlobalBackground";
+import { useLanguage } from "./context/LanguageContext";
+import { LANGUAGES } from "./data/translations";
 import { useTheme } from "./context/ThemeContext";
 
 import { BodyRegion } from "./types";
@@ -22,6 +24,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>("home");
   const { language, setLanguage, t, activeLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const [bgPointer, setBgPointer] = useState({ x: 0, y: 0 });
 
   const [selectedTriageRegion, setSelectedTriageRegion] = useState<BodyRegion | null>(null);
 
@@ -38,6 +41,31 @@ export default function App() {
   const handleTriageRegionSelect = (region: BodyRegion) => {
     setSelectedTriageRegion(region);
     setActiveTab("symptom");
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width - 0.5) * 100;
+    const y = ((event.clientY - rect.top) / rect.height - 0.5) * 100;
+    setBgPointer({ x, y });
+  };
+
+  const handleTouchMove = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((touch.clientX - rect.left) / rect.width - 0.5) * 100;
+    const y = ((touch.clientY - rect.top) / rect.height - 0.5) * 100;
+    setBgPointer({ x, y });
+  };
+
+  const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((touch.clientX - rect.left) / rect.width - 0.5) * 100;
+    const y = ((touch.clientY - rect.top) / rect.height - 0.5) * 100;
+    setBgPointer({ x, y });
   };
 
   const renderActivePage = () => {
@@ -76,7 +104,14 @@ export default function App() {
   ];
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors duration-500 ${theme === 'dark' ? 'dark' : ''}`}>
+    <div
+      className={`relative min-h-screen flex flex-col overflow-hidden transition-colors duration-500 ${theme === 'dark' ? 'dark' : ''}`}
+      onPointerMove={handlePointerMove}
+      onPointerDown={handlePointerMove}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+    >
+      <GlobalBackground pointerX={bgPointer.x} pointerY={bgPointer.y} />
       <div className="bg-mesh-glow" />
 
       {/* ── Wide Modern Header ────────────────────────────────────────────── */}
@@ -146,7 +181,7 @@ export default function App() {
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value as any)}
-                  className="language-select bg-transparent text-sm font-black text-accent uppercase tracking-widest outline-none border-none cursor-pointer appearance-none pr-8 font-display"
+                  className="language-select bg-bg-card/90 text-text-primary text-sm font-black uppercase tracking-widest outline-none border-none cursor-pointer appearance-none pr-8 font-display"
                 >
                   {LANGUAGES.map(l => (
                     <option key={l.code} value={l.code} className="bg-bg-surface text-white py-2">

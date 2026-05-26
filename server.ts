@@ -32,6 +32,68 @@ const ai = new GoogleGenAI({
   },
 });
 
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+
+function extractJsonObject(text: string) {
+  const trimmed = (text || "").trim();
+  if (!trimmed) return {};
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const start = trimmed.indexOf("{");
+    const end = trimmed.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      const candidate = trimmed.slice(start, end + 1);
+      return JSON.parse(candidate);
+    }
+    throw new Error("No JSON object found in model output.");
+  }
+}
+
+async function groqChat(messages: any[], temperature = 0.2) {
+  const groqKey = process.env.GROQ_API_KEY;
+  if (!groqKey) {
+    throw new Error("GROQ_API_KEY missing.");
+  }
+
+  const response = await fetch(GROQ_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${groqKey}`,
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      temperature,
+      messages,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Groq error ${response.status}: ${errorText}`);
+  }
+
+  const data: any = await response.json();
+  return data?.choices?.[0]?.message?.content || "";
+}
+
+async function groqJsonFallback(systemInstruction: string, userPrompt: string) {
+  const content = await groqChat(
+    [
+      {
+        role: "system",
+        content: `${systemInstruction}
+Return strictly valid JSON only. Do not wrap with markdown fences.`,
+      },
+      { role: "user", content: userPrompt },
+    ],
+    0.2
+  );
+  return extractJsonObject(content);
+}
+
 function getFactCheckFallback(claim: string) {
   const norm = claim.toLowerCase();
   let verdict = "Inconclusive";
@@ -294,61 +356,19 @@ app.get(apiRoute("/health"), (req, res) => {
   res.json({ status: "healthy", timestamp: new Date().toISOString() });
 });
 
-const GEMINI_MODEL_CANDIDATES = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-];
-
-async function generateWithModelFallback(payload: {
-  model?: string;
-  contents: any;
-  config?: any;
-}) {
-  const requestedModel = payload.model;
-  const candidates = requestedModel
-    ? [requestedModel, ...GEMINI_MODEL_CANDIDATES.filter((m) => m !== requestedModel)]
-    : GEMINI_MODEL_CANDIDATES;
-
-  let lastError: any;
-  for (const model of candidates) {
-    try {
-      return await ai.models.generateContent({
-        ...payload,
-        model,
-      });
-    } catch (err: any) {
-      const msg = String(err?.message || err || "").toLowerCase();
-      const shouldTryNext =
-        msg.includes("not found") ||
-        msg.includes("is not supported") ||
-        msg.includes("unsupported");
-      if (!shouldTryNext) {
-        throw err;
-      }
-      lastError = err;
-      console.warn(`[Gemini] Model ${model} unavailable; trying next candidate.`);
-    }
-  }
-
-  throw lastError || new Error("No compatible Gemini model available.");
-}
-
 // Endpoint 2: Analyze Symptoms via Gemini (Standard Triage)
 app.post(apiRoute("/analyze-symptoms"), async (req, res) => {
-  try {
-    const { region, symptoms, severity, duration, customSymptom, language } = req.body;
+  const { region, symptoms, severity, duration, customSymptom, language } = req.body;
+  const formattedSymptoms = [
+    ...(symptoms || []),
+    ...(customSymptom ? [customSymptom] : []),
+  ];
 
-    const formattedSymptoms = [
-      ...(symptoms || []),
-      ...(customSymptom ? [customSymptom] : []),
-    ];
+  if (formattedSymptoms.length === 0) {
+    return res.status(400).json({ error: "No symptoms provided for analysis." });
+  }
 
-    if (formattedSymptoms.length === 0) {
-      return res.status(400).json({ error: "No symptoms provided for analysis." });
-    }
-
-    const prompt = `Analyze symptoms for regional area "${region}". 
+  const prompt = `Analyze symptoms for regional area "${region}". 
 Symptoms reported: ${formattedSymptoms.join(", ")}. 
 User-reported severity (0 to 4 scale, where 4 is critical): ${severity}. 
 Estimated duration of symptoms: ${duration || "unspecified"}.
@@ -360,12 +380,23 @@ Evaluate these inputs and identify:
 3. Simple, non-medicative helpful actions/tips (e.g., safe resting alignments, hydration, ice packs). Do not prescribe drugs.
 4. Appropriate clinical specialties the user should consult.`;
 
-    const response = await generateWithModelFallback({
-      model: "gemini-2.5-flash",
+  const symptomSystemInstruction = `You are a highly precise, board-certified emergency medicine triage bot. Your task is to analyze patient-submitted symptoms and estimate triage likelihoods. Since you are an advisory tool, always separate conditions into potential matches with confidence values, designate potential immediate emergencies of high danger correctly, and recommend real physical clinical doctor consultations.
+CRITICAL: You must write and output ALL text fields, strings, names, explanations, emergency reports, recommendations and tips completely in this language: ${language || "English"}.
+Output JSON shape:
+{
+  "emergency": boolean,
+  "emergencyReason": string,
+  "conditions": [{"name": string, "probability": number, "explanation": string, "urgency": "Critical"|"High"|"Moderate"|"Low"}],
+  "dynamicTips": [string, string, string],
+  "recommendedSpecialties": [string]
+}`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
       contents: prompt,
       config: {
-        systemInstruction: `You are a highly precise, board-certified emergency medicine triage bot. Your task is to analyze patient-submitted symptoms and estimate triage likelihoods. Since you are an advisory tool, always separate conditions into potential matches with confidence values, designate potential immediate emergencies of high danger correctly, and recommend real physical clinical doctor consultations.
-CRITICAL: You must write and output ALL text fields, strings, names, explanations, emergency reports, recommendations and tips completely in this language: ${language || "English"}.`,
+        systemInstruction: symptomSystemInstruction,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -411,51 +442,70 @@ CRITICAL: You must write and output ALL text fields, strings, names, explanation
     const data = JSON.parse(response.text || "{}");
     res.json(data);
   } catch (error: any) {
-    console.warn("Gemini Error in symptoms analysis, using fallback:", error.message || error);
-    const fallback = getSymptomAnalysisFallback(
-      req.body.region || "General",
-      [...(req.body.symptoms || []), ...(req.body.customSymptom ? [req.body.customSymptom] : [])],
-      req.body.severity || 0,
-      req.body.duration || "unspecified"
-    );
-    res.json(fallback);
+    console.warn("Gemini Error in symptoms analysis, attempting Groq fallback:", error.message || error);
+    try {
+      const groqData = await groqJsonFallback(symptomSystemInstruction, prompt);
+      return res.json(groqData);
+    } catch (groqError: any) {
+      console.warn("Groq Error in symptoms analysis, using local fallback:", groqError.message || groqError);
+      const fallback = getSymptomAnalysisFallback(
+        req.body.region || "General",
+        [...(req.body.symptoms || []), ...(req.body.customSymptom ? [req.body.customSymptom] : [])],
+        req.body.severity || 0,
+        req.body.duration || "unspecified"
+      );
+      return res.json(fallback);
+    }
   }
 });
 
 // Endpoint 3: Scan Medicine Label / OCR Identification
 app.post(apiRoute("/identify-medicine"), async (req, res) => {
+  const { text, image, language } = req.body;
+
+  let prompt = "";
+  let contents: any = [];
+
+  if (image) {
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+    contents = [
+      {
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: base64Data,
+        },
+      },
+      {
+        text: `Identify the medicine packaging, strip, or prescription label shown in this image. Extract active pharmacological ingredients, dosage levels, approximate CDSCO/FDA verification status, safe intake guides, and side-effects. Also flag key negative combinations or interactions with other common medication. Provide response in ${language || "English"}.`,
+      },
+    ];
+  } else if (text) {
+    prompt = `Extract medical details for drug name/search query: "${text}". Give official pharmacological info in ${language || "English"}.`;
+    contents = [prompt];
+  } else {
+    return res.status(400).json({ error: "Please provide either scanned text representation or base64 image data." });
+  }
+
+  const medicineSystemInstruction = `You are a professional clinical drug information verification system. You translate scanned pill strips, labels or text searches into accurate chemical formulations, side effects, precautions, CDSCO status flags and safe dosage outlines.
+CRITICAL: You must write and translate all text values, medicine description, side-effects, interactions, warnings and dosage notes completely in this language: ${language || "English"}.
+Output JSON shape:
+{
+  "name": string,
+  "generic": string,
+  "verified": boolean,
+  "dosage": string,
+  "frequency": string,
+  "sideEffects": string,
+  "contraindications": string,
+  "interactions": [{"drug": string, "risk": string}]
+}`;
+
   try {
-    const { text, image, language } = req.body;
-
-    let prompt = "";
-    let contents: any = [];
-
-    if (image) {
-      const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-      contents = [
-        {
-          inlineData: {
-            mimeType: "image/jpeg",
-            data: base64Data,
-          },
-        },
-        {
-          text: `Identify the medicine packaging, strip, or prescription label shown in this image. Extract active pharmacological ingredients, dosage levels, approximate CDSCO/FDA verification status, safe intake guides, and side-effects. Also flag key negative combinations or interactions with other common medication. Provide response in ${language || "English"}.`,
-        },
-      ];
-    } else if (text) {
-      prompt = `Extract medical details for drug name/search query: "${text}". Give official pharmacological info in ${language || "English"}.`;
-      contents = [prompt];
-    } else {
-      return res.status(400).json({ error: "Please provide either scanned text representation or base64 image data." });
-    }
-
-    const response = await generateWithModelFallback({
-      model: "gemini-2.5-flash",
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
       contents: contents,
       config: {
-        systemInstruction: `You are a professional clinical drug information verification system. You translate scanned pill strips, labels or text searches into accurate chemical formulations, side effects, precautions, CDSCO status flags and safe dosage outlines.
-CRITICAL: You must write and translate all text values, medicine description, side-effects, interactions, warnings and dosage notes completely in this language: ${language || "English"}.`,
+        systemInstruction: medicineSystemInstruction,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -488,25 +538,43 @@ CRITICAL: You must write and translate all text values, medicine description, si
     const data = JSON.parse(response.text || "{}");
     res.json(data);
   } catch (error: any) {
-    console.warn("Gemini Error identifying medicine, using fallback:", error.message || error);
-    const searchQuery = req.body.text || "Standard Formula";
-    const fallback = getMedicineIdentifyFallback(searchQuery);
-    res.json(fallback);
+    console.warn("Gemini Error identifying medicine, attempting Groq fallback:", error.message || error);
+    try {
+      const groqPrompt = image
+        ? `Medicine image was uploaded by user. Perform best-effort medicine identification guidance based on likely packaging cues and clinical safety context. If uncertain, say uncertain and provide safe guidance. Respond in ${language || "English"}.`
+        : prompt;
+      const groqData = await groqJsonFallback(medicineSystemInstruction, groqPrompt);
+      return res.json(groqData);
+    } catch (groqError: any) {
+      console.warn("Groq Error identifying medicine, using local fallback:", groqError.message || groqError);
+      const searchQuery = req.body.text || "Standard Formula";
+      const fallback = getMedicineIdentifyFallback(searchQuery);
+      return res.json(fallback);
+    }
   }
 });
 
 // Endpoint 4: Voice Input Mapping to Symptoms & Regions
 app.post(apiRoute("/voice-input"), async (req, res) => {
-  try {
-    const { transcript, language } = req.body;
-    if (!transcript) {
-      return res.status(400).json({ error: "Transcript data is required for mapping." });
-    }
+  const { transcript, language } = req.body;
+  if (!transcript) {
+    return res.status(400).json({ error: "Transcript data is required for mapping." });
+  }
 
-    const response = await generateWithModelFallback({
-      model: "gemini-2.5-flash",
-      contents: `Translate the following colloquial patient description: "${transcript}" into formal medical terminologies, specific anatomical region candidates, and extract concrete listed symptoms that are active.
-CRITICAL: Translate all output fields (mappedTerm background, detected symptoms list) completely into this language: ${language || "English"}.`,
+  const voicePrompt = `Translate the following colloquial patient description: "${transcript}" into formal medical terminologies, specific anatomical region candidates, and extract concrete listed symptoms that are active.
+CRITICAL: Translate all output fields (mappedTerm background, detected symptoms list) completely into this language: ${language || "English"}.`;
+
+  const voiceSystemInstruction = `Return strictly valid JSON with:
+{
+  "mappedTerm": string,
+  "detectedSymptoms": [string],
+  "suggestedRegion": "Head"|"Chest"|"Abdomen"|"Left Arm"|"Right Arm"|"Left Leg"|"Right Leg"|"Back"
+}`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: voicePrompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -531,10 +599,16 @@ CRITICAL: Translate all output fields (mappedTerm background, detected symptoms 
     const data = JSON.parse(response.text || "{}");
     res.json(data);
   } catch (error: any) {
-    console.warn("Gemini Error in voice input mapping, using fallback:", error.message || error);
-    const transcript = req.body.transcript || "";
-    const fallback = getVoiceInputFallback(transcript);
-    res.json(fallback);
+    console.warn("Gemini Error in voice input mapping, attempting Groq fallback:", error.message || error);
+    try {
+      const groqData = await groqJsonFallback(voiceSystemInstruction, voicePrompt);
+      return res.json(groqData);
+    } catch (groqError: any) {
+      console.warn("Groq Error in voice input mapping, using local fallback:", groqError.message || groqError);
+      const transcript = req.body.transcript || "";
+      const fallback = getVoiceInputFallback(transcript);
+      return res.json(fallback);
+    }
   }
 });
 
@@ -545,21 +619,11 @@ app.post(apiRoute("/fact-check"), async (req, res) => {
     return res.status(400).json({ error: "Medical claim or assertion text is required." });
   }
 
-  try {
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (!geminiKey || geminiKey === "dummy-key") {
-      console.warn("No Gemini API key configured; using local fact-check guidance.");
-      const fallback = getFactCheckFallback(claim);
-      return res.json(fallback);
-    }
-
-    const response = await generateWithModelFallback({
-      model: "gemini-2.5-flash",
-      contents: `Fact-check this medical claim, myth, or question thoroughly: "${claim}". 
+  const factPrompt = `Fact-check this medical claim, myth, or question thoroughly: "${claim}". 
 Provide a clear, clinical, objective scientific breakdown. 
-Target response language: ${language || "English"}.`,
-      config: {
-        systemInstruction: `You are a professional medical fact-checker. You verify health claims against scientific evidence.
+Target response language: ${language || "English"}.`;
+
+  const factSystemInstruction = `You are a professional medical fact-checker. You verify health claims against scientific evidence.
 CRITICAL: You must output the response in JSON format strictly following this schema:
 {
   "claim": "The original claim being checked",
@@ -568,7 +632,21 @@ CRITICAL: You must output the response in JSON format strictly following this sc
   "evidenceSource": "Brief description of the primary scientific evidence used",
   "safetyAdvisory": "A clinical safety note for the patient"
 }
-Translate all fields into the requested language: ${language || "English"}.`,
+Translate all fields into the requested language: ${language || "English"}.`;
+
+  try {
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (!geminiKey || geminiKey === "dummy-key") {
+      console.warn("No Gemini API key configured; using local fact-check guidance.");
+      const fallback = getFactCheckFallback(claim);
+      return res.json(fallback);
+    }
+
+    const response = await ai.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: factPrompt,
+      config: {
+        systemInstruction: factSystemInstruction,
         responseMimeType: "application/json",
         tools: [{ googleSearch: {} }]
       }
@@ -577,9 +655,15 @@ Translate all fields into the requested language: ${language || "English"}.`,
     const data = JSON.parse(response.text || "{}");
     res.json(data);
   } catch (error: any) {
-    console.warn("Gemini Error in factcheck analysis:", error.message || error);
-    const fallback = getFactCheckFallback(claim);
-    res.json(fallback);
+    console.warn("Gemini Error in factcheck analysis, attempting Groq fallback:", error.message || error);
+    try {
+      const groqData = await groqJsonFallback(factSystemInstruction, factPrompt);
+      return res.json(groqData);
+    } catch (groqError: any) {
+      console.warn("Groq Error in factcheck analysis, using local fallback:", groqError.message || groqError);
+      const fallback = getFactCheckFallback(claim);
+      return res.json(fallback);
+    }
   }
 });
 
@@ -643,20 +727,19 @@ Is there a specific symptom, medication query, or first-aid practice you would l
 
 // Endpoint 6: Real-time AI Assistant Chat
 app.post(apiRoute("/assistant/chat"), async (req, res) => {
-  try {
-    const { messages, language } = req.body;
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: "Messages array is required." });
-    }
+  const { messages, language } = req.body;
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: "Messages array is required." });
+  }
 
-    // Format chat messages appropriately for Gemini API
-    // Gemini 3.5 expects {"role": "user"|"model", "parts": [{"text": "..."}]}
-    const contents = messages.map(msg => ({
-      role: msg.role === "assistant" ? "model" as const : "user" as const,
-      parts: [{ text: msg.content || msg.text || "" }]
-    }));
+  // Format chat messages appropriately for Gemini API
+  // Gemini 3.5 expects {"role": "user"|"model", "parts": [{"text": "..."}]}
+  const contents = messages.map(msg => ({
+    role: msg.role === "assistant" ? "model" as const : "user" as const,
+    parts: [{ text: msg.content || msg.text || "" }]
+  }));
 
-    const systemInstruction = `You are "MediGuide's Real-time Clinical Wellness Copilot", an empathetic, highly professional medical-grade AI assistant. 
+  const systemInstruction = `You are "MediGuide's Real-time Clinical Wellness Copilot", an empathetic, highly professional medical-grade AI assistant. 
 Your goal is to provide patient-first medical education, first-aid techniques, medication information, and symptom explanations.
 Adhere strictly to these clinical rules:
 1. Since you do not replace real-world physical physicians, always frame your guidance as educational and encourage consulting licensed medical practitioners.
@@ -665,8 +748,9 @@ Adhere strictly to these clinical rules:
 4. Provide safe, non-medicative physical recovery recommendations (such as relative rest, hydration, standard first aid) unless describing specific medicines explicitly asked about.
 5. Absolute emergency cases (chest pain, stroke, breathing crises, severe blood loss) must trigger a high-contrast emergency warning immediately.`;
 
-    const response = await generateWithModelFallback({
-      model: "gemini-2.5-flash",
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
       contents: contents,
       config: {
         systemInstruction,
@@ -677,10 +761,23 @@ Adhere strictly to these clinical rules:
 
     res.json({ response: response.text || "" });
   } catch (error: any) {
-    console.warn("Gemini Error in assistant chat, using fallback:", error.message || error);
-    const lastMessage = req.body.messages?.[req.body.messages.length - 1]?.content || "";
-    const fallback = getAssistantChatFallback(lastMessage, req.body.language || "English");
-    res.json(fallback);
+    console.warn("Gemini Error in assistant chat, attempting Groq fallback:", error.message || error);
+    try {
+      const groqMessages = [
+        { role: "system", content: systemInstruction },
+        ...messages.map((msg: any) => ({
+          role: msg.role === "assistant" ? "assistant" : "user",
+          content: msg.content || msg.text || "",
+        })),
+      ];
+      const groqResponse = await groqChat(groqMessages, 0.7);
+      return res.json({ response: groqResponse || "" });
+    } catch (groqError: any) {
+      console.warn("Groq Error in assistant chat, using local fallback:", groqError.message || groqError);
+      const lastMessage = req.body.messages?.[req.body.messages.length - 1]?.content || "";
+      const fallback = getAssistantChatFallback(lastMessage, req.body.language || "English");
+      return res.json(fallback);
+    }
   }
 });
 

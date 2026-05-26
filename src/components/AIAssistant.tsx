@@ -114,12 +114,14 @@ export default function AIAssistant() {
             <div className="flex-1 p-3 sm:p-5 overflow-y-auto space-y-4 bg-bg-void/10">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                  <div className={`p-3 sm:p-4 max-w-[78%] sm:max-w-[72%] rounded-3xl shadow-lg ${
+                  <div className={`p-3 sm:p-4 max-w-[78%] sm:max-w-[72%] rounded-3xl shadow-lg overflow-hidden ${
                     msg.role === "user"
                       ? "bg-accent text-black font-bold rounded-tr-none"
                       : "bg-bg-elevated border border-white/10 text-text-secondary rounded-tl-none"
                   }`}>
-                    <p className="text-sm leading-relaxed">{msg.content}</p>
+                    <div className="max-h-[32vh] overflow-y-auto break-words pr-1">
+                      <p className="text-sm leading-relaxed">{msg.content}</p>
+                    </div>
                   </div>
                   <span className="text-[8px] font-black text-text-dim uppercase mt-1 px-2">
                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

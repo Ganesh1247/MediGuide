@@ -106,12 +106,24 @@ main p, main li, main label, main input, main textarea, main select {
 
 @media (max-width: 640px) {
   main {
-    font-size: 0.88rem;
+    font-size: 0.82rem;
   }
 
   main p, main li, main label, main input, main textarea, main select {
-    font-size: 0.9rem;
+    font-size: 0.84rem;
     line-height: 1.45;
+  }
+
+  .card {
+    border-radius: 22px;
+    padding: 18px;
+  }
+
+  .btn-primary, .btn-secondary, .btn-danger {
+    font-size: 12px;
+    padding: 10px 18px;
+    border-radius: 14px;
+    letter-spacing: 0.03em;
   }
 }
 
@@ -134,20 +146,20 @@ body.light main span.text-white {
 .hero-image-mask {
   background: linear-gradient(
     to right,
-    rgba(2, 6, 23, 0.66) 0%,
-    rgba(2, 6, 23, 0.52) 35%,
-    rgba(2, 6, 23, 0.3) 70%,
-    rgba(2, 6, 23, 0.2) 100%
+    rgba(2, 6, 23, 0.44) 0%,
+    rgba(2, 6, 23, 0.3) 35%,
+    rgba(2, 6, 23, 0.16) 70%,
+    rgba(2, 6, 23, 0.08) 100%
   );
 }
 
 body.light .hero-image-mask {
   background: linear-gradient(
     to right,
-    rgba(15, 23, 42, 0.52) 0%,
-    rgba(15, 23, 42, 0.42) 35%,
-    rgba(15, 23, 42, 0.26) 70%,
-    rgba(15, 23, 42, 0.16) 100%
+    rgba(15, 23, 42, 0.30) 0%,
+    rgba(15, 23, 42, 0.22) 35%,
+    rgba(15, 23, 42, 0.12) 70%,
+    rgba(15, 23, 42, 0.06) 100%
   );
 }
 
@@ -405,6 +417,12 @@ body.light .hero-image-mask {
   0% { box-shadow: 0 0 10px rgba(34, 211, 238, 0.2); }
   50% { box-shadow: 0 0 25px rgba(34, 211, 238, 0.4); }
   100% { box-shadow: 0 0 10px rgba(34, 211, 238, 0.2); }
+}
+
+@keyframes hospitalPulse {
+  0% { transform: scale(0.88); opacity: 0.9; }
+  70% { transform: scale(1.25); opacity: 0.18; }
+  100% { transform: scale(1.35); opacity: 0; }
 }
 
 .animate-slideUp { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }

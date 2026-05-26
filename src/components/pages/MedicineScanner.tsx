@@ -156,14 +156,14 @@ export default function MedicineScanner() {
 
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
 
-            <div className="p-10 bg-bg-elevated/50 border-t border-white/5 flex gap-4">
+            <div className="p-10 bg-bg-elevated/50 border-t border-white/5 flex flex-col sm:flex-row gap-4">
               {!cameraActive ? (
                 <>
-                  <button onClick={startCamera} className="flex-1 btn-primary !py-6 justify-center shadow-2xl shadow-accent/20 border-none cursor-pointer">
-                    <Camera className="w-6 h-6" /> <span className="font-black">LIVE CAMERA</span>
-                  </button>
                   <button onClick={() => fileInputRef.current?.click()} className="flex-1 btn-secondary !py-6 justify-center border-none cursor-pointer">
                     <Upload className="w-6 h-6 text-accent" /> <span className="font-black text-accent">UPLOAD FILE</span>
+                  </button>
+                  <button onClick={startCamera} className="flex-1 sm:mr-2 btn-primary !py-6 justify-center shadow-2xl shadow-accent/20 border-none cursor-pointer">
+                    <Camera className="w-6 h-6" /> <span className="font-black">LIVE CAMERA</span>
                   </button>
                 </>
               ) : (

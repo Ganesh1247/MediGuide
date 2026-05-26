@@ -196,7 +196,7 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
                   </div>
 
                   <div className="space-y-4">
-                    <p className="text-xs font-black uppercase tracking-widest text-text-secondary flex items-center gap-3">
+                    <p className="text-xs font-black uppercase tracking-widest text-text-primary flex items-center gap-3">
                       <span className="w-8 h-[2px] bg-accent" /> 2. Intensity Calibration
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -205,7 +205,7 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
                           key={l.label}
                           onClick={() => setSeverity(i)}
                           className={`flex flex-col items-center gap-2 p-3 sm:p-4 rounded-2xl border transition-all cursor-pointer ${
-                            severity === i ? "bg-amber-warn border-amber-warn text-black font-black" : "bg-bg-void/50 border-border text-text-secondary hover:border-amber-warn/40"
+                            severity === i ? "bg-accent border-accent text-black font-black shadow-lg shadow-accent/20" : "bg-bg-void/50 border-border text-text-primary hover:border-accent/40"
                           }`}
                         >
                           <span className="text-3xl">{l.icon}</span>
@@ -216,7 +216,7 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
                   </div>
 
                   <div className="space-y-4">
-                    <p className="text-xs font-black uppercase tracking-widest text-text-secondary flex items-center gap-3">
+                    <p className="text-xs font-black uppercase tracking-widest text-text-primary flex items-center gap-3">
                       <span className="w-8 h-[2px] bg-accent" /> 3. Duration
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
@@ -225,7 +225,7 @@ export default function SymptomChecker({ initialRegion, onNavigateToTab }: Sympt
                           key={chip}
                           onClick={() => setDuration(chip)}
                           className={`w-full px-4 py-2 rounded-xl text-xs font-black uppercase transition-all border cursor-pointer ${
-                            duration === chip ? "bg-blue border-blue text-white shadow-lg shadow-blue/20" : "bg-bg-void/60 border-border text-text-secondary hover:border-blue/40"
+                            duration === chip ? "bg-accent border-accent text-black shadow-lg shadow-accent/20" : "bg-bg-void/60 border-border text-text-primary hover:border-accent/40"
                           }`}
                         >
                           {chip}

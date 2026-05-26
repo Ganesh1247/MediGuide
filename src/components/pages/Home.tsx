@@ -88,13 +88,13 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
       {/* ── 1. Cinematic Hero Section ── */}
       <section className="relative rounded-[36px] overflow-hidden bg-bg-surface/95 border border-white/5 shadow-2xl min-h-[520px] flex items-center p-6 lg:p-12 group">
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-r from-bg-surface via-bg-surface/80 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-bg-surface/65 via-bg-surface/40 to-transparent z-10" />
           <motion.img
             initial={{ scale: 1.05, opacity: 0 }}
-            animate={{ scale: 1, opacity: 0.35 }}
+            animate={{ scale: 1, opacity: 0.6 }}
             transition={{ duration: 1.5, ease: "easeOut" }}
             src="https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&q=80&w=1800"
-            className="hero-bg-img w-full h-full object-cover brightness-70"
+            className="hero-bg-img w-full h-full object-cover brightness-90"
             alt="Indian clinical healthcare environment"
           />
           <div className="absolute inset-0 hero-image-mask z-20" />

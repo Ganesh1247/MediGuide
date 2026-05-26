@@ -115,16 +115,16 @@ export default function App() {
       <div className="bg-mesh-glow" />
 
       {/* ── Wide Modern Header ────────────────────────────────────────────── */}
-      <header className="fixed top-0 left-0 right-0 z-50 nav-blur h-24 flex items-center shadow-[0_4px_30px_rgba(0,0,0,0.1)] border-b border-white/5">
-        <div className="w-full max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 z-50 nav-blur h-20 sm:h-24 flex items-center shadow-[0_4px_30px_rgba(0,0,0,0.1)] border-b border-white/5">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
 
           {/* Logo Section */}
           <button
             onClick={() => handleNavigateToTab("home")}
-            className="flex items-center gap-4 cursor-pointer border-none bg-transparent group"
+            className="flex items-center gap-3 sm:gap-4 cursor-pointer border-none bg-transparent group"
           >
-            <div className="w-12 h-12 bg-gradient-to-tr from-accent to-blue rounded-2xl flex items-center justify-center shadow-lg shadow-accent/20 group-hover:rotate-6 transition-all duration-300">
-              <Activity className="w-7 h-7 text-black" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-tr from-accent to-blue rounded-2xl flex items-center justify-center shadow-lg shadow-accent/20 group-hover:rotate-6 transition-all duration-300">
+              <Activity className="w-6 h-6 sm:w-7 sm:h-7 text-black" />
             </div>
             <div className="text-left hidden md:block">
               <span className="font-display font-black text-2xl tracking-tighter text-text-primary block leading-none">
@@ -148,7 +148,7 @@ export default function App() {
                   className={`relative flex items-center gap-2.5 px-5 py-3 rounded-[18px] font-bold text-sm transition-all border-none cursor-pointer group ${
                     active
                     ? "bg-accent text-black shadow-xl shadow-accent/10"
-                    : "text-text-secondary hover:text-white hover:bg-white/5"
+                    : "text-text-secondary hover:text-text-primary hover:bg-white/5"
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${active ? 'scale-110' : 'group-hover:scale-110'} transition-transform duration-300`} />
@@ -165,10 +165,10 @@ export default function App() {
           </div>
 
           {/* Utility Section */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={toggleTheme}
-              className="w-11 h-11 rounded-2xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-text-secondary border-none cursor-pointer transition-all hover:scale-105 active:scale-95"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-text-secondary border-none cursor-pointer transition-all hover:scale-105 active:scale-95"
             >
               {theme === "dark" ? <Sun className="w-5 h-5 text-amber-warn" /> : <Moon className="w-5 h-5" />}
             </button>
@@ -195,7 +195,7 @@ export default function App() {
 
             <button
               onClick={() => handleNavigateToTab("emergency")}
-              className={`px-7 py-3 rounded-2xl font-black text-sm flex items-center gap-2.5 transition-all shadow-lg border-none cursor-pointer group ${
+              className={`px-4 sm:px-7 py-2.5 sm:py-3 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 sm:gap-2.5 transition-all shadow-lg border-none cursor-pointer group ${
                 activeTab === "emergency"
                 ? "bg-white text-red-alert"
                 : "bg-red-alert text-white shadow-red-alert/30 hover:brightness-110 active:scale-95"
@@ -209,7 +209,7 @@ export default function App() {
       </header>
 
       {/* ── Main Content ─────────────────────────────────────────────────── */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-6 pt-36 pb-32">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-24 sm:pb-32">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -226,8 +226,8 @@ export default function App() {
       <AIAssistant />
 
       {/* ── Modern Bottom Nav (Mobile) ─────────────────────────── */}
-      <nav className="lg:hidden fixed bottom-6 left-6 right-6 z-50">
-        <div className="nav-blur rounded-[32px] p-2.5 flex items-center justify-around shadow-2xl border border-white/10 max-w-lg mx-auto">
+      <nav className="lg:hidden fixed bottom-4 left-3 right-3 z-50">
+        <div className="nav-blur rounded-[28px] p-2 flex items-center justify-around shadow-2xl border border-white/10 max-w-lg mx-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = activeTab === item.id;
@@ -235,11 +235,11 @@ export default function App() {
               <button
                 key={item.id}
                 onClick={() => handleNavigateToTab(item.id)}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all border-none bg-transparent cursor-pointer ${
+                className={`flex flex-col items-center gap-1 p-2.5 rounded-2xl transition-all border-none bg-transparent cursor-pointer ${
                   active ? "text-accent" : "text-text-dim"
                 }`}
               >
-                <Icon className={`w-6 h-6 ${active ? "scale-125" : ""} transition-all duration-300`} />
+                <Icon className={`w-5 h-5 ${active ? "scale-125" : ""} transition-all duration-300`} />
                 <span className="text-[10px] font-black uppercase tracking-tighter opacity-0 h-0 data-[active=true]:opacity-100 data-[active=true]:h-auto transition-all" data-active={active}>
                   {item.label.split(" ")[0]}
                 </span>

@@ -165,7 +165,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {BODY_REGIONS.slice(0, 3).map(r => (
+            {BODY_REGIONS.slice(0, 5).map(r => (
               <button
                 key={r.id}
                 onClick={() => onStartTriage(r)}

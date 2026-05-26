@@ -541,7 +541,19 @@ main section {
 .language-select {
   color: var(--text-primary);
   background: transparent;
-  min-width: 9rem;
+  min-width: 10rem;
+  width: 100%;
+  padding: 0.85rem 2.5rem 0.85rem 0;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  border: none;
+  outline: none;
+}
+
+.language-select:focus {
+  outline: none;
 }
 
 .language-select option {

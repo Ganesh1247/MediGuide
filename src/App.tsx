@@ -166,30 +166,24 @@ export default function App() {
 
           {/* Utility Section */}
           <div className="flex items-center gap-2 sm:gap-4">
-            <button
-              onClick={toggleTheme}
-              className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-text-secondary border-none cursor-pointer transition-all hover:scale-105 active:scale-95"
-            >
-              {theme === "dark" ? <Sun className="w-5 h-5 text-amber-warn" /> : <Moon className="w-5 h-5" />}
-            </button>
-
-            <div className="hidden sm:flex items-center gap-3 bg-accent/10 p-1.5 rounded-2xl border border-accent/20 hover:border-accent/40 transition-all group">
-              <div className="w-8 h-8 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/20">
+            <div className="hidden sm:flex items-center gap-3 bg-bg-card/80 px-3 py-2 rounded-[28px] border border-white/10 shadow-sm shadow-black/10 transition-all hover:border-accent/30 group">
+              <div className="w-9 h-9 bg-accent rounded-2xl flex items-center justify-center shadow-lg shadow-accent/20">
                 <Globe className="w-4 h-4 text-black" />
               </div>
-              <div className="relative">
+              <div className="relative min-w-40">
                 <select
                   value={language}
+                  aria-label="Select language"
                   onChange={(e) => setLanguage(e.target.value as any)}
-                  className="language-select bg-bg-card/90 text-text-primary text-sm font-black uppercase tracking-widest outline-none border-none cursor-pointer appearance-none pr-8 font-display"
+                  className="language-select w-full bg-transparent text-text-primary text-sm font-semibold uppercase tracking-[0.18em] outline-none border-none cursor-pointer appearance-none pr-10 py-3 font-display"
                 >
                   {LANGUAGES.map(l => (
-                    <option key={l.code} value={l.code} className="bg-bg-surface text-white py-2">
+                    <option key={l.code} value={l.code} className="bg-bg-surface text-text-primary py-2">
                       {l.flag} {l.name}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-accent pointer-events-none group-hover:translate-y-[-40%] transition-transform" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-accent pointer-events-none transition-transform" />
               </div>
             </div>
 
@@ -203,6 +197,13 @@ export default function App() {
             >
               <Siren className="w-5 h-5 animate-pulse group-hover:scale-110 transition-transform" />
               <span className="hidden xs:inline uppercase tracking-widest">108 SOS</span>
+            </button>
+
+            <button
+              onClick={toggleTheme}
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-text-secondary border-none cursor-pointer transition-all hover:scale-105 active:scale-95"
+            >
+              {theme === "dark" ? <Sun className="w-5 h-5 text-amber-warn" /> : <Moon className="w-5 h-5" />}
             </button>
           </div>
         </div>

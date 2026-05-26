@@ -151,8 +151,8 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
       </section>
 
       {/* ── 2. Interactive 3D Hub ── */}
-      <section className="space-y-8 relative">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
+      <section className="space-y-8 relative px-4 lg:px-0">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
             <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20">
@@ -177,7 +177,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
           </div>
         </div>
 
-        <div className="mx-4 rounded-[32px] border border-white/10 bg-bg-surface/70 p-5 shadow-2xl backdrop-blur-2xl flex flex-col sm:flex-row items-center gap-4">
+        <div className="rounded-[32px] border border-white/10 bg-bg-surface/70 p-5 shadow-2xl backdrop-blur-2xl flex flex-col sm:flex-row items-center gap-4">
           <div className="flex-1">
             <h3 className="text-lg font-black text-white tracking-tight">Touch a body region to begin a guided triage.</h3>
             <p className="text-sm text-text-secondary leading-relaxed mt-2">Instant help from MediGuide with one tap, no more accidental hover states on mobile.</p>
@@ -191,7 +191,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(520px,1fr)_280px] gap-6 px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(520px,1fr)_280px] gap-6">
           <div className="space-y-6">
             <div className="card !p-6 bg-bg-surface/80 border border-white/10 shadow-2xl backdrop-blur-md">
               <div className="flex items-center gap-4">
@@ -309,7 +309,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
 
       {/* ── 3. Health Services Matrix ── */}
       <section className="space-y-12">
-        <div className="text-center space-y-4 max-w-3xl mx-auto px-4">
+        <div className="text-center space-y-4 max-w-3xl mx-auto px-4 lg:px-0">
           <h2 className="text-4xl font-black text-white tracking-tight uppercase">Specialized <span className="text-accent">Clinical Modules</span></h2>
           <p className="text-xl text-text-secondary font-medium leading-relaxed">
             Our diagnostic suites utilize state-of-the-art neural networks to provide accurate and personalized healthcare assistance.
@@ -352,7 +352,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
       </section>
 
       {/* ── 4. Information & Safety Sections ── */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 lg:px-0">
         <div className="card !p-6 bg-accent/5 border-accent/20 flex gap-6 items-start shadow-accent/5">
           <div className="w-16 h-16 rounded-3xl bg-accent/10 flex items-center justify-center shrink-0 border border-accent/20 shadow-inner">
             <Info className="w-8 h-8 text-accent" />
@@ -403,7 +403,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
 
       {/* ── 7. Modern Footer ── */}
       <footer className="pt-24 pb-12 border-t border-white/5 space-y-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 px-4 lg:px-0">
           {/* Brand Column */}
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -479,7 +479,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
           </div>
         </div>
 
-        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 px-4">
+        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 px-4 lg:px-0">
           <p className="text-xs text-text-dim font-bold uppercase tracking-widest">
             {t("copyright")}
           </p>

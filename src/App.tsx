@@ -96,11 +96,11 @@ export default function App() {
 
   const navItems = [
     { id: "home",      label: t("home"),           icon: Activity },
-    { id: "symptom",   label: t("nav_triage_check"), icon: ShieldAlert },
-    { id: "hospitals", label: t("nav_hospitals_map"), icon: MapPin },
-    { id: "medicine",  label: t("nav_rx_scanner"), icon: Pill },
-    { id: "voice",     label: t("nav_vocal_synth"), icon: Speech },
-    { id: "fact",      label: t("nav_fact_audit"),   icon: HelpCircle },
+    { id: "symptom",   label: language === "en" ? "Triage" : t("nav_triage_check"), icon: ShieldAlert },
+    { id: "hospitals", label: language === "en" ? "Hospitals" : t("nav_hospitals_map"), icon: MapPin },
+    { id: "medicine",  label: language === "en" ? "Scanner" : t("nav_rx_scanner"), icon: Pill },
+    { id: "voice",     label: language === "en" ? "Voice" : t("nav_vocal_synth"), icon: Speech },
+    { id: "fact",      label: language === "en" ? "Facts" : t("nav_fact_audit"),   icon: HelpCircle },
   ];
 
   return (

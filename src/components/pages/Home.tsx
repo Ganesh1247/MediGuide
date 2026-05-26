@@ -35,7 +35,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
   const [selectedRegionForTriage, setSelectedRegionForTriage] = useState<BodyRegion | null>(null);
   const [touchFeedbackRegion, setTouchFeedbackRegion] = useState<BodyRegion | null>(null);
   const [activeTouchedRegion, setActiveTouchedRegion] = useState<BodyRegion | null>(null);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     if (!touchFeedbackRegion) return;
@@ -46,7 +46,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
   const services = [
     {
       id: "symptom",
-      title: t("nav_triage_check"),
+      title: language === "en" ? "Triage" : t("nav_triage_check"),
       desc: t("home_desc"),
       image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800",
       tag: "Clinical",
@@ -55,7 +55,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
     },
     {
       id: "hospitals",
-      title: t("nav_hospitals_map"),
+      title: language === "en" ? "Hospitals" : t("nav_hospitals_map"),
       desc: t("action_station_dispatch_desc"),
       image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800",
       tag: "Live Map",
@@ -64,7 +64,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
     },
     {
       id: "medicine",
-      title: t("nav_rx_scanner"),
+      title: language === "en" ? "Scanner" : t("nav_rx_scanner"),
       desc: t("action_station_medicine_desc"),
       image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=800",
       tag: "Smart Rx",
@@ -73,7 +73,7 @@ export default function Home({ onStartTriage, onNavigateToTab }: HomeProps) {
     },
     {
       id: "fact",
-      title: t("nav_fact_audit"),
+      title: language === "en" ? "Facts" : t("nav_fact_audit"),
       desc: t("action_station_claim_desc"),
       image: "/myth_auditor.png",
       tag: "AI Verified",

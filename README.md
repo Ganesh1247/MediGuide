@@ -15,6 +15,8 @@ View your app in AI Studio: https://ai.studio/apps/98bc4588-3540-4523-b417-7bedf
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Set the `GEMINI_API_KEY` in `.env.local` to your Gemini API key.
+3. Set `GROQ_API_KEY` in `.env.local` to enable automatic fallback when Gemini fails.
+4. (Optional) Set `GROQ_MODEL` (default: `llama-3.3-70b-versatile`).
+5. Run the app:
    `npm run dev`
